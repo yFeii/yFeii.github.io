@@ -5,3 +5,19 @@ date: 2016-12-12 18:05:37 +0800
 comments: true
 categories: 
 ---
+
+
+# AVCapture
+#### 背景：
+要实现拼图+拍照+剪裁这样的一期功能，拍照要支持调焦，辅助对焦线，前后摄像头，可自定义的拍照区域等,首先iOS有提供原生的拍照框架UIImagePickerController，该框架提供一个可自定义的view（cameraOverlayView），但功能承载有限，所以只能用AVCapture来实现
+
+![Mou icon](http://cdn.withme.cn/withme.back.u.4c0322b60468ae82fa32fd77b329cfde.png
+            )
+### AVCapture相关类的关系
+* AVCaptureInput 输入设备类（前后置摄像头等）
+* AVCaptureOutput 输出数据类 ，输出 图像，视频。
+* AVCaptureDevice  当前设备 可配置焦距，闪光灯等常见参数
+* AVCaptureSession 核心会话类，连接AVCaptureInput和AVCaptureOutput之间的会话。协调处理输入和输出的数据
+
+* AVCaptureVideoPreviewLayer 捕捉摄像头景象，用于成像展示预览
+
