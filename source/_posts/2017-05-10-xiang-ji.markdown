@@ -1,11 +1,10 @@
 ---
 layout: post
-title: "octopress"
-date: 2016-12-12 18:05:37 +0800
+title: "相机"
+date: 2017-05-10 11:21:15 +0800
 comments: true
 categories: 
 ---
-
 
 # AVCapture
 #### 背景：
