@@ -6,16 +6,9 @@ comments: true
 categories: 
 ---
 
-# category
 #### 背景：
-最初接触 [method swizzling](http://blog.csdn.net/yiyaaixuexi/article/details/9374411) + category 的方式来实现AOP时，遇到一个问题：在一个类的两个category 里同时对一个方法进行Method Swizzling,那么如何保证这几个方法的执行顺序呢
-![Mou icon](http://cdn.withme.cn/withme.back.u.4c0322b60468ae82fa32fd77b329cfde.png
-            )
-### AVCapture相关类的关系
-* AVCaptureInput 输入设备类（前后置摄像头等）
-* AVCaptureOutput 输出数据类 ，输出 图像，视频。
-* AVCaptureDevice  当前设备 可配置焦距，闪光灯等常见参数
-* AVCaptureSession 核心会话类，连接AVCaptureInput和AVCaptureOutput之间的会话。协调处理输入和输出的数据
-
-* AVCaptureVideoPreviewLayer 捕捉摄像头景象，用于成像展示预览
-
+最初接触 [method swizzling](http://blog.csdn.net/yiyaaixuexi/article/details/9374411) + category 的方式来实现AOP时，遇到一个问题：在一个类的两个category 里同时对一个方法进行Method Swizzling,那么如何保证这几个方法的执行顺序呢,场景如图：
+![Markdown](http://i1.bvimg.com/606737/3e59ff3f267c8e49.jpg)
+![Markdown](http://i1.bvimg.com/606737/14dae7c84642365a.jpg)
+![Markdown](http://i1.bvimg.com/606737/a241917a505f7c7a.jpg)
+##### 问题拆解：
