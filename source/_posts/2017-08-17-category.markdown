@@ -1,3 +1,11 @@
+---
+layout: post
+title: "category"
+date: 2017-08-17 11:21:15 +0800
+comments: true
+categories: 
+---
+
 # category
 #### 背景：
 最初接触 [method swizzling](http://blog.csdn.net/yiyaaixuexi/article/details/9374411) + category 的方式来实现AOP时，遇到一个问题：在一个类的两个category 里同时对一个方法进行Method Swizzling,那么如何保证这几个方法的执行顺序呢
