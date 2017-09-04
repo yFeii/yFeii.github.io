@@ -9,7 +9,7 @@ categories:
 #### 背景：
 最初接触 [method swizzling](http://blog.csdn.net/yiyaaixuexi/article/details/9374411) + category 的方式来实现AOP时，遇到一个问题：在一个类的两个category 里同时对一个方法进行Method Swizzling,那么如何保证这几个方法的执行顺序呢,场景如图： 
 
-![Markdown](http://i1.bvimg.com/606737/3e59ff3f267c8e49.jpg =200x)
-![Markdown](http://i1.bvimg.com/606737/14dae7c84642365a.jpg =200x)
-![Markdown](http://i1.bvimg.com/606737/a241917a505f7c7a.jpg =200x)
+![Markdown](http://i1.bvimg.com/606737/3e59ff3f267c8e49.jpg =600x)
+![Markdown](http://i1.bvimg.com/606737/14dae7c84642365a.jpg =600x)
+![Markdown](http://i1.bvimg.com/606737/a241917a505f7c7a.jpg =600x)
 ##### 问题拆解：
