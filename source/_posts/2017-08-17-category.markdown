@@ -6,10 +6,7 @@ comments: true
 categories: 
 ---
 
-#### 背景：
-最初接触 [method swizzling](http://blog.csdn.net/yiyaaixuexi/article/details/9374411) + category 的方式来实现AOP时，遇到一个问题：在一个类的两个category 里同时对一个方法进行Method Swizzling,那么如何保证这几个方法的执行顺序呢,场景如图： 
+#### 日常心得：
+1.Xcode在运行时是根据buildPhases->Compile Sources里面的从上至下顺序编译的，编译时通过压栈的方式将多个分类压栈，根据后进先出的原则，后编译的会被先调用，当objc_msgSend找到方法并调用之后，就不再继续传递消息，所以形成所谓上的覆盖。并不是后面创建的就一定被调用，得看创建之后其在buildPhases->Compile Sources里面的位置    ----（2017.9.19）
 
-![Markdown](http://i1.bvimg.com/606737/3e59ff3f267c8e49s.jpg)
-![Markdown](http://i1.bvimg.com/606737/14dae7c84642365a.jpg =600x)
-![Markdown](http://i1.bvimg.com/606737/a241917a505f7c7a.jpg =600x)
-##### 问题拆解：
+
