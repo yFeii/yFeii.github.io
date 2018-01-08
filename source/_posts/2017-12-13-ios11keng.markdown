@@ -7,12 +7,12 @@ categories:
 ---
 ####千呼万唤，iOS11.0终于发布，但是对于我们来说是有很多坑要填的，本文将不断更新开发中遇到的各种由系统升级引发的奇葩问题。<!--more-->
 ####UITableView 等滚动视图
-*废弃API
+废弃API
 ```javascript
 automaticallyAdjustsScrollViewInsets = true   //iOS11之前
 contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever; //iOS11之后
 ```
-* 使用MJRefresh上拉加载会出现不断跳跃 [详见这里](https://github.com/CoderMJLee/MJRefresh/issues/1071),解决方法
+使用MJRefresh上拉加载会出现不断跳跃 [详见这里](https://github.com/CoderMJLee/MJRefresh/issues/1071),解决方法
 ```javascript
 if (@available(iOS 11.0, *)) {
 
@@ -22,6 +22,5 @@ if (@available(iOS 11.0, *)) {
    self.mainTableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
 }
 ```
-* 
 
 
