@@ -6,7 +6,7 @@ comments: true
 categories: 
 ---
 
-本文意在收集开发中不经意发现的小惊喜，积少成多，方至千里。<!--more-->"
+本文意在收集开发中不经意发现的小惊喜，积少成多，方至千里。<!--more-->
 
 >autoLayout是个好东西，但是在滚动视图里(UIScrollView等)，childView的约束加在scrollView上会出现各种好玩的问题如：contentSize设置无效，childView宽度或高度设置无效等等各种无法达到frame方式的表现，代码如下：
 ```javascript
