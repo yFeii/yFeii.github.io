@@ -1,12 +1,13 @@
 ---
 layout: post
-title: "iOS11坑"
+title: "iOS11问题收集整理与解决方案"
 date: 2017-12-13 16:28:57 +0800
 comments: true
 categories: 
 ---
-####千呼万唤，iOS11.0终于发布，但是对于我们来说是有很多坑要填的，本文将不断更新开发中遇到的各种由系统升级引发的奇葩问题。<!--more-->
-####UITableView 等滚动视图
+千呼万唤，iOS11.0终于发布，但是对于我们来说是有很多坑要填的，本文将不断更新开发中遇到的各种由系统升级引发的奇葩问题。<!--more-->
+\n
+UITableView 等滚动视图
 废弃API
 ```javascript
 automaticallyAdjustsScrollViewInsets = true   //iOS11之前
