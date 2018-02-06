@@ -16,7 +16,5 @@ categories:
 ```
 <br>要点：勾股定理😄</br>
 <br>demo[看这里](https://github.com/yFeii/RadiusCollectionView)</br>
-
-
-效果预览
+效果预览![Markdown](http://i4.bvimg.com/606737/1fdad0b1a0b3443e.gif)
 
