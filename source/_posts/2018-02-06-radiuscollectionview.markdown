@@ -14,8 +14,9 @@ categories:
 
 }
 ```
-要点：勾股定理😄
-demo[看这里](https://github.com/yFeii/RadiusCollectionView)
+<br>要点：勾股定理😄</br>
+<br>demo[看这里](https://github.com/yFeii/RadiusCollectionView)</br>
+
+
 效果预览
-![image](https://github.com/yFeii/RadiusCollectionView/blob/master/QQ20180206-145730-HD.gif)
 
