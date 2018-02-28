@@ -50,5 +50,6 @@ CPPFLAGS: -I/usr/local/opt/openssl/include
 * 涉及操作 /usr/bin 类似目录时，重启系统，当启动的时候我们同时按下cmd+r进入Recovery模式，在終端中输入csrutil disable，后执行的操作可加上 sudo如：mv /xxx/xxx -> sudo mv /xxx/xxx
 * 在做ln -s 等目录操作时需注意 目录中的版本号对应到你当前的版本，不要按照查到的资料copy
 * 看stackoverflow的评论和github的issue 会有意外收获
+* 仔细看终端的安装提示，很多时候抛错都会提示对应操作
 * 还是吃了英语不好的亏啊
 
