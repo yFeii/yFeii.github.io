@@ -6,12 +6,10 @@ comments: true
 categories: 
 ---
 
-偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..demo<!--more-->
+偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby.. <!--more-->
 
+年前写了一个[网络请求库](https://github.com/yFeii/RadiusCollectionView)，发布到Cocoapods一切正常却发现 pod search 不到，通过如下方法解决[原文](https://www.jianshu.com/p/b5e5cd053464)
 
-核心方法在于自定义flowLayout 中的这个方法更新布局，
 ```javascript
-- (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)indexPath {
-
-}
+  rm ~/Library/Caches/CocoaPods/search_index.json
 ```
