@@ -1,0 +1,10 @@
+---
+layout: post
+title: "第一次面试感受"
+date: 2018-07-28 13:28:00 +0800
+comments: true
+categories: 
+---
+
+工作两年半，有了第一次面试别人的机会，面试了两天，写下感受<!--more-->
+
