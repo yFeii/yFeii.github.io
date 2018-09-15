@@ -16,7 +16,7 @@ categories:
 ```javascript
 
 JSBridge.invoke({action,params,callback});
-//native 在加载webview 之前须设置UserAgent   拼接 "js_nativeApp"
+native 在加载webview 之前须设置UserAgent   拼接 "js_nativeApp"
 action: //执行操作标识，必须提供，字符串形式，操作对应见下
 params: //执行操作所附带参数，可选提供，js对象，例如
 
