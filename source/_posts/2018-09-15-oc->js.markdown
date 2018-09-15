@@ -10,15 +10,15 @@ categories:
 
 最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等<!--more-->
 
-交互方案 基于WKWebview
+交互方案 基于WKWebview（UIWebview也可），此方案不但可以用正常业务交互，也可把前端请求放在客户端来做，这样避免客户端与前端API环境不统一的问题。
 
 前端部分
 ```javascript
 
 JSBridge.invoke({action,params,callback});
-native 在加载webview 之前须设置UserAgent   拼接 "js_nativeApp"
-action: 执行操作标识，必须提供，字符串形式，操作对应见下
-params: 执行操作所附带参数，可选提供，js对象，例如
+//native 在加载webview 之前须设置UserAgent   拼接 "js_nativeApp"
+action: //执行操作标识，必须提供，字符串形式，操作对应见下
+params: //执行操作所附带参数，可选提供，js对象，例如
 
 {
     num1: 1,
@@ -40,9 +40,9 @@ app部分
 如果存在回调关系
 
 nativeCallBack(callId,action,callback);
-callId: 从前端获得并传回
-action 从前端获得并传回
-callback: 执行完成后的回调函数（如果有）
+callId: //从前端获得并传回
+action //从前端获得并传回
+callback: //执行完成后的回调函数（如果有）
 如果不存在回调关系
 
 nativeCallJS(params)
@@ -59,3 +59,9 @@ params: 结构如下
 交互流程如下图
 
 ![Markdown](http://outodkqy4.bkt.clouddn.com/WechatIMG11.jpeg)
+
+开发过程中遇到的问题
+
+* wkwebview在iOS 10之前有很多bug 可参考 [IMYWebview](https://github.com/li6185377/IMYWebView/tree/master/IMYWebView)
+* 前端需引入版本兼容编译器：语法转换，支持客户端低版本，一些es6的语法在iOS8,9上不兼容，会出现js加载失败(js交互失效,点击失效)造成的bug
+* 可引入 [vconsole](https://www.npmjs.com/package/vconsole) 协助前端debug
