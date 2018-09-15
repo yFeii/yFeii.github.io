@@ -8,9 +8,9 @@ categories:
 
 
 
-最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等-->
+最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等<!--more-->
 
-1. 交互方案 基于WKWebview
+交互方案 基于WKWebview
 
 前端部分
 ```javascript
@@ -55,3 +55,7 @@ params: 结构如下
 } 
 
 ```
+
+交互流程如下图
+
+![Markdown](http://outodkqy4.bkt.clouddn.com/WechatIMG11.jpeg)
