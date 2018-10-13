@@ -1,0 +1,35 @@
+---
+layout: post
+title: "周报"
+date: 2018-10-13 11:56:56 +0800
+comments: true
+categories: 
+---
+2018.10.13星期六，周报：一周内遇到的问题及解决方案等<!--more-->
+
+设置状态栏颜色
+1. 容器结果不存在 UINavigationcontroller 时 可直接在ViewController 中修改如下
+
+```javascript
+- (UIStatusBarStyle)preferredStatusBarStyle {
+  return UIStatusBarStyleLightContent;
+}
+- (BOOL)prefersStatusBarHidden {
+  return NO;
+}
+```
+如果存在 导航结构 需要在下面方法中 返回栈顶ViewController [原文链接](https://blog.csdn.net/denghuihua/article/details/50978160)
+
+```javascript
+
+- (UIViewController *)childViewControllerForStatusBarStyle{
+   return self.topViewController;
+}
+```
+
+2. 或者使用直接使用下面方法在ViewController 中修改
+```javascript
+
+self.navigationController.navigationBar.barStyle = UIBarStyleDefault;
+```
+如果使用方法2 那么需要注意设置导航栏隐藏时如果使用 navigationBarHidden 那么再次修改statusBar 无效，如果即要使 barStyle 生效 还要隐藏导航 请使用 navigationBar.hidden 来隐藏导航 
