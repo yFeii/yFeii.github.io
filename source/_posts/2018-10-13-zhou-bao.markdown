@@ -36,7 +36,7 @@ self.navigationController.navigationBar.barStyle = UIBarStyleDefault;
 如果使用方法2 那么需要注意设置导航栏隐藏时如果使用 navigationBarHidden 那么再次修改statusBar 无效，如果即要使 barStyle 生效 还要隐藏导航 请使用 navigationBar.hidden 来隐藏导航 
 
 
- ###  window 
+ ###  关于window 
  
  即使不调用 [window makeKeyAndVisible]  app一样会进入rootVC，但是如果在 AppDelegate 中存在 两个 window（以下称为windowA）（一个是真正的windowA，一个是业务需求实现的windowB：比如广告等，根据业务判断来切换windowB）时，在iOS12 中会出现闪一下白色的bug，是因为 windowA会自动 展现并盖住windowB,需要手动处理 调节windowA与windowB的level，或者将windowA 先设为nil。
 
