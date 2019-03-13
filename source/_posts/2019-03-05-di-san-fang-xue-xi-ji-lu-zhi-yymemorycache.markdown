@@ -35,6 +35,7 @@ YYMemoryCache学习笔记<!--more-->
 ```
 从上面的代码的我们可以看出 YYLinkedMap 类 是主要由一个 dic 及两个YYLinkedMapNode 对象构成。dic的作用是提供给我们快速查出缓存对象是否存在，而YYLinkedMapNode 则是一个双向链表，其维护的是所有缓存对象并且按最一次使用的时间依次递减（最近用的在头，在最后的则是最不常用的）。如下图：
 
+![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/WeChateaf6c87e083a30bbaf07a4b78ea06c66.png)
 
 
 
