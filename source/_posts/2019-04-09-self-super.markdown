@@ -20,6 +20,7 @@ NSLog(@"obj3 = %@",obj3);
 NSLog(@"obj4 = %@",obj4);
 ```
 其输出结果如图所示：(其中 runtimeTest 继承NSObject,我们在runtimeTest类中 测试如上代码)
+
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png)
 
 利用clang 命令查看其C++实现  ，其中XXXX 为目标文件
@@ -51,6 +52,11 @@ objc_msgSendSuper第一个参数为一个名为objc_super 的结构体，其构�
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png)
 下面在来看NSObject的class方法实现[源码地址](https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html)
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png)
-在class的是实现中，我们看到其返回值为self，同时我们也注意到，在发起消息时传入的接受者都为self(obj1和obj2的示例中，即为runtimeTest类的实例)，
-所以在其父类的class方法中，此时self 也为runtimeTest实例，所以我们最终obj1和obj2的打印结果都为runtimeTest,但是在obj3和obj4的实例中，superclass，
-返回的是((struct objc_class *)self)->super_class。
+在class的实现中，我们看到其返回值为self，同时我们也注意到，在发起消息时传入的接收者都为self(obj1和obj2的示例中，即为runtimeTest类的实例)，
+所以在其父类的class方法中，此时self 也为runtimeTest实例，所以我们最终obj1和obj2的打印结果都为runtimeTest,但是在obj3和obj4的实例中，
+superclass方法返回的是((struct objc_class *)self)->super_class。所以结果也为runtimeTest的父类即：NSObject
+### 总结
+* self 与super 在调用方法时，在运行时的变现有所不同，self为objc_msgSend，super为objc_msgSendSuper。
+* objc_msgSend 会优先从当前类中找实现，其方法参数与objc_msgSendSuper的区别。
+* objc_msgSendSuper 直接从父类中寻找实现，objc_super结构体中参数的含义。（接收者，父类）
+* 之所以上面4个示例的输出结果为runtimeTest，runtimeTest，NSObject，NSObject，是由消息的接收者与父类的方法实现有关系的。
