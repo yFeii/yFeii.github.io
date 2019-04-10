@@ -44,5 +44,7 @@ NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png)
 从上面的obj1和obj2 的示例里可以看出，obj1的接受者参数为self，obj2在objc_super的结构体中，receiver的值同样是self.
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png)
-下面在来看NSObject的class 方法实现，[源码地址](https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html)
-
+下面在来看NSObject的class方法实现[源码地址](https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html)
+![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png)
+在class的是实现中，我们看到其返回值为self，同时我们也注意到，在发起消息时传入的接受者都为self(obj1和obj2的示例中，即为runtimeTest类的实例)，
+所以在其父类的Class方法中，此时self 也为runtimeTest实例，所以我们最终obj1和obj2的打印结果都为runtimeTest
