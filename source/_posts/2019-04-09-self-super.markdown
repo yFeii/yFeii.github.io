@@ -40,11 +40,17 @@ NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz
 ```
 从objc/message.h中 objc_msgSend 的参数说明可以看出其第一个参数为消息的接收者，
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png)
-而objc_msgSendSuper 参数的第一个参数为一个名为objc_super 的结构体，其构成如下
+而objc_msgSendSuper 参数的说明中，我们需要注意一点，objc_msgSendSuper方法是直接从父类的方法列表中找实现，所以当我们使用super调用
+方法时，运行时会将[super callFunction]转换为objc_msgSendSuper并且父类的方法中寻找实现，以此来实现调用父类方法，如下图
+![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041002.png)
+
+objc_msgSendSuper第一个参数为一个名为objc_super 的结构体，其构成如下
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png)
+
 从上面的obj1和obj2 的示例里可以看出，obj1的接受者参数为self，obj2在objc_super的结构体中，receiver的值同样是self.
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png)
 下面在来看NSObject的class方法实现[源码地址](https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html)
-![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png)
+![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png)
 在class的是实现中，我们看到其返回值为self，同时我们也注意到，在发起消息时传入的接受者都为self(obj1和obj2的示例中，即为runtimeTest类的实例)，
-所以在其父类的Class方法中，此时self 也为runtimeTest实例，所以我们最终obj1和obj2的打印结果都为runtimeTest
+所以在其父类的class方法中，此时self 也为runtimeTest实例，所以我们最终obj1和obj2的打印结果都为runtimeTest,但是在obj3和obj4的实例中，superclass，
+返回的是((struct objc_class *)self)->super_class。
