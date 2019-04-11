@@ -50,7 +50,8 @@ static void _I_ViewController_setNum_(ViewController * self, SEL _cmd, NSNumber 
 由此可以看出，我们平时声明的属性，在编译期间会由编译器自动添加上set和get方法的实现。同时也可以发现属性在这里面被转换成了
 set+get+成员变量的形式。如果此时声明一个成员变量，其名为_num，其他不变，再执行clang，可以发现其实现没有任何改变。
 
-下面我们加入@synthesize，OC代码如下并制定合成合成变量名为_num
+下面我们加入@synthesize，OC代码如下并指定合成变量名为_num
+#### : 示例a
 
 ```javascript
 @interface ViewController : UIViewController
@@ -92,6 +93,7 @@ static void _I_ViewController_viewDidLoad(ViewController * self, SEL _cmd) {
 }
 ```
 此时我们发现，@synthesize执行的操作其实就是上面例子中添加set和get的过程。那么@synthesize的合成规则是什么样的呢，继续来看代码
+#### : 示例b(改变成员变量的变量名)
 
 ```javascript
 
@@ -102,4 +104,48 @@ static void _I_ViewController_viewDidLoad(ViewController * self, SEL _cmd) {
 @synthesize num=_num1;
 
 ```
+clang之后的代码，为了便于查看只展示变化部分
+```javascript
+extern "C" unsigned long OBJC_IVAR_$_ViewController$_num1;
+struct ViewController_IMPL {
+struct UIViewController_IMPL UIViewController_IVARS;
+NSNumber *_num1;
+};
 
+// @synthesize num=_num1;
+static NSNumber * _I_ViewController_num(ViewController * self, SEL _cmd) { return (*(NSNumber **)((char *)self + OBJC_IVAR_$_ViewController$_num1)); }
+static void _I_ViewController_setNum_(ViewController * self, SEL _cmd, NSNumber *num) { (*(NSNumber **)((char *)self + OBJC_IVAR_$_ViewController$_num1)) = num; }
+
+```
+此时合成的成员变量名也变成_num1。我们现在通过_num已经不能访问属性num了。同时，在合成的set和get 方法内部也变成了成员变量_num1。、
+此时访问属性的访问为set+get+_num1。
+
+那么如果不写名成员变的名字 又变成什么样子呢。
+#### : 示例c(不写成员变量)
+```javascript
+
+//这行代码我们改变下
+//@synthesize num=_num1;
+
+//变成这样，然后再次clang
+@synthesize num
+
+```
+clang之后的代码
+```javascript
+
+extern "C" unsigned long OBJC_IVAR_$_ViewController$num;
+struct ViewController_IMPL {
+struct UIViewController_IMPL UIViewController_IVARS;
+NSNumber *num;
+};
+
+// @synthesize num;
+static NSNumber * _I_ViewController_num(ViewController * self, SEL _cmd) { return (*(NSNumber **)((char *)self + OBJC_IVAR_$_ViewController$num)); }
+static void _I_ViewController_setNum_(ViewController * self, SEL _cmd, NSNumber *num) { (*(NSNumber **)((char *)self + OBJC_IVAR_$_ViewController$num)) = num; }
+
+```
+我们发现如果不指明成员变量的名称，则会自动生成一个跟属性名同名的成员变量，此时访问属性的访问为set+get+num。注意是num（不带下划线）。
+### @synthesize的合成规则结论
+* 如果是 @synthesize num（示例c); 会生成一个名称为 num 的成员变量，也就是说：如果没有指定成员变量的名称会自动生成一个属性同名的成员变量，
+* 如果指定了成员变量的名称，会生成一个指定的名称的成员变量 @synthesize num = _num1(示例b);。如果这个成员已经存在了就不再生成了。
