@@ -149,3 +149,9 @@ static void _I_ViewController_setNum_(ViewController * self, SEL _cmd, NSNumber 
 ### @synthesize的合成规则结论
 * 如果是 @synthesize num（示例c); 会生成一个名称为 num 的成员变量，也就是说：如果没有指定成员变量的名称会自动生成一个属性同名的成员变量，
 * 如果指定了成员变量的名称，会生成一个指定的名称的成员变量 @synthesize num = _num1(示例b);。如果这个成员已经存在了就不再生成了。
+### 需要使用@synthesize的场景
+* 同时重写了 setter 和 getter 时
+* 重写了只读属性的 getter 时
+* 使用了 @dynamic 时
+* 在 @protocol 中定义的所有属性
+* 重载的属性
