@@ -28,6 +28,7 @@ struct Block_literal_1 {
 };
 ```
 通过上面的代码，我们可以知道，一个block对象实际是由6个部分组成
+
 * isa指针：OC对象都有该指针，用于实现对象相关的功能。
 * flags：用于按bit位表示一些block的附加信息。
 * reserved：保留变量。
@@ -54,4 +55,65 @@ struct SampleB{
 }
 ```
 ### 用clang分析block实现
+新建工程，新建类test(这里类名和变量名最好不要用带block关键字的，因为后面clang后，变量名会自动填充一些关键字)。test.m中代码如下
+```javascript
+- (instancetype)init {
+
+   self = [super init];
+   if (self) {
+   void(^test)(void) = ^(){
+
+      NSLog(@"11");
+   };
+   test();
+}
+  return self;
+}
+
+```
+
+执行clong，摘出主要代码如下。
+
+```javascript
+struct __block_impl {
+   void *isa;
+   int Flags;
+   int Reserved;
+   void *FuncPtr;
+};
+
+//这种就是之前说的 为什么尽量不要用block的命名，在执行clang之后，struct名是由类名+方法名的方式拼接成。
+struct __test__init_block_impl_0 {
+    struct __block_impl impl;
+    struct __test__init_block_desc_0* Desc;
+    __test__init_block_impl_0(void *fp, struct __test__init_block_desc_0 *desc, int flags=0) {
+        impl.isa = &_NSConcreteStackBlock;
+        impl.Flags = flags;
+        impl.FuncPtr = fp;
+        Desc = desc;
+    }
+};
+
+static void __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) {
+
+    NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_0cd5eb_mi_0);
+}
+
+static struct __test__init_block_desc_0 {
+    size_t reserved;
+    size_t Block_size;
+} __test__init_block_desc_0_DATA = { 0, sizeof(struct __test__init_block_impl_0)};
+
+static instancetype _I_test_init(test * self, SEL _cmd) {
+
+    self = ((test *(*)(__rw_objc_super *, SEL))(void *)objc_msgSendSuper)((__rw_objc_super){(id)self, (id)class_getSuperclass(objc_getClass("test"))}, sel_registerName("init"));
+    if (self) {
+        void(*test)(void) = ((void (*)())&__test__init_block_impl_0((void *)__test__init_block_func_0, &__test__init_block_desc_0_DATA));
+        ((void (*)(__block_impl *))((__block_impl *)test)->FuncPtr)((__block_impl *)test);
+}
+    return self;
+}
+
+```
+
 
