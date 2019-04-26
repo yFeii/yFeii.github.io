@@ -27,3 +27,31 @@ struct Block_literal_1 {
    // imported variables
 };
 ```
+通过上面的代码，我们可以知道，一个block对象实际是由6个部分组成
+* isa指针：OC对象都有该指针，用于实现对象相关的功能。
+* flags：用于按bit位表示一些block的附加信息。
+* reserved：保留变量。
+* invoke：函数指针，指向具体的block实现的函数调用地址，相当于clang编译器下的impl，命名不一样而已！
+* descriptor：表示该block的附加描述信息，主要是size大小，以及copy和dispose函数的指针。
+* variables：capture过来的变量，block能够访问它外部的局部变量，就是因为将这些变量(或变量的地址)复制到了结构体中。
+
+该数据结构和clang分析出来的结构实际上是一样的，仅仅是结构体的嵌套方式不一样。比如，下面两个结构体的嵌套方式不一样，但是在内存上是完全一样的，原因是结构体本身并不带有任何额外的附加信息：
+```javascript
+struct SampleA {
+   int a;
+   int b;
+   int c;
+};
+
+struct SampleB{
+   int a;
+   struct Part1 {
+      int b;
+   };
+   struct Part2{
+      int c;
+   };
+}
+```
+### 用clang分析block实现
+
