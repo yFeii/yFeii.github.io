@@ -162,12 +162,16 @@ static void __test__init_block_func_0(struct __test__init_block_impl_0 *__cself)
    NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_8d5c07_mi_1,a);
 }
 
-//这也是一个不同点，和上面“第一次clang结果”相比，多了两个方法：block_copy_0和block_dispose_0。我会在下面仔细说明
+//不同点，和上面“第一次clang结果”相比，多了两个方法：block_copy_0和block_dispose_0
+//下面方法参数为__test__init_block_impl_0结构体，
+//内部调用的是_Block_object_assign方法，且操作了参数结构体内的“a”变量，如何操作下面会仔细说明。
 static void __test__init_block_copy_0(struct __test__init_block_impl_0*dst, struct __test__init_block_impl_0*src) {
    _Block_object_assign((void*)&dst->a, (void*)src->a, 3/*BLOCK_FIELD_IS_OBJECT*/);
 }
 
-//不同点block_dispose_0。
+//不同点。
+//下面方法参数同为__test__init_block_impl_0。
+//方法内部调用的是 _Block_object_dispose，同样操作了参数结构体内的“a”变量，如何操作下面会仔细说明
 static void __test__init_block_dispose_0(struct __test__init_block_impl_0*src) {
    _Block_object_dispose((void*)src->a, 3/*BLOCK_FIELD_IS_OBJECT*/);   
 }
@@ -192,3 +196,14 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 }
 
 ```
+先来说下多出来的这个方法： __test__init_block_copy_0 和 __test__init_block_dispose_0
+
+当block中捕获对象类型的变量时，我们发现block结构体__test__init_block_impl_0的描述结构体__test__init_block_desc_0中多了两个参数copy和dispose函数（非对象类型如：int等类型时这不会出现这两个函数）copy和dispose函数中传入的都是__test__init_block_impl_0结构体本身。
+
+#### _Block_object_assign函数调用时机及作用:
+当block进行copy操作的时候就会自动调用__test__init_block_desc_0内部的__test__init_block_copy_0函数，__test__init_block_copy_0函数内部会调用_Block_object_assign函数。
+_Block_object_assign函数会自动根据__test__init_block_impl_0结构体内部的“a”是什么类型的指针，对“a”对象产生强引用或者弱引用。可以理解为_Block_object_assign函数内部会对“a”进行引用计数器的操作，如果__test__init_block_impl_0结构体内“a”指针是__strong类型，则为强引用，引用计数+1，如果__test__init_block_impl_0结构体内“a”指针是__weak类型，则为弱引用，引用计数不变。
+
+#### _Block_object_dispose函数调用时机及作用:
+当block从堆中移除时就会自动调用__test__init_block_desc_0中的__test__init_block_dispose_0函数，__test__init_block_dispose_0函数内部会调用_Block_object_dispose函数。
+_Block_object_dispose会对“a”对象做释放操作，类似于release，也就是断开对“a”对象的引用，而“a”究竟是否被释放还是取决于“a”对象自己的引用计数。
