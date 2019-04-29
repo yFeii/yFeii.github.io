@@ -7,7 +7,7 @@ categories:
 ---
 block的实现原理，对象模型<!--more-->
 ### 数据结构定义
-从苹果的llvm[开源代码中](!http://clang.llvm.org/docs/Block-ABI-Apple.html#id2),我们可以看到block的数据结构定义如下
+从苹果的llvm[开源代码中](!http://clang.llvm.org/docs/Block-ABI-Apple.html#id2),我们可以看到block的数据结构定义如下：***示例A***。
 ```javascript
 
 struct Block_literal_1 {
@@ -27,7 +27,7 @@ struct Block_literal_1 {
    // imported variables
 };
 ```
-通过上面的代码，我们可以知道，一个block对象实际是由6个部分组成
+通过上面的代码，我们可以知道，一个block对象实际是由6个部分组成，我们姑且那上面的示例代码成为
 
 * isa指针：OC对象都有该指针，用于实现对象相关的功能。
 * flags：用于按bit位表示一些block的附加信息。
@@ -72,14 +72,14 @@ struct SampleB{
 
 ```
 
-执行clong，摘出主要代码如下。
+执行clang，摘出主要代码如下。以下称“第一次clang结果”
 
 ```javascript
 struct __block_impl {
    void *isa;
    int Flags;
    int Reserved;
-   void *FuncPtr;
+   void *FuncPtr; //函数指针
 };
 
 //这种就是之前说的 为什么尽量不要用block的命名，在执行clang之后，struct名是由类名+方法名的方式拼接成。
@@ -89,31 +89,106 @@ struct __test__init_block_impl_0 {
     __test__init_block_impl_0(void *fp, struct __test__init_block_desc_0 *desc, int flags=0) {
         impl.isa = &_NSConcreteStackBlock;
         impl.Flags = flags;
-        impl.FuncPtr = fp;
+        impl.FuncPtr = fp;   //函数指针,可以从下面调用block传入的参数看出，这里指向了 __test__init_block_func_0
         Desc = desc;
     }
 };
 
 static void __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) {
-
+    //真正的NSLog在这里
     NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_0cd5eb_mi_0);
 }
 
+//示例A 中的descriptor。
 static struct __test__init_block_desc_0 {
     size_t reserved;
     size_t Block_size;
 } __test__init_block_desc_0_DATA = { 0, sizeof(struct __test__init_block_impl_0)};
 
+//对应OC的重写初始化方法
 static instancetype _I_test_init(test * self, SEL _cmd) {
 
     self = ((test *(*)(__rw_objc_super *, SEL))(void *)objc_msgSendSuper)((__rw_objc_super){(id)self, (id)class_getSuperclass(objc_getClass("test"))}, sel_registerName("init"));
     if (self) {
+    //__test__init_block_impl_0的第一个参数*fp，其值为__test__init_block_func_0。
         void(*test)(void) = ((void (*)())&__test__init_block_impl_0((void *)__test__init_block_func_0, &__test__init_block_desc_0_DATA));
         ((void (*)(__block_impl *))((__block_impl *)test)->FuncPtr)((__block_impl *)test);
-}
+  }
     return self;
 }
 
 ```
+根据注释我们可以看出上面的结构跟示例A 是基本对的上，invoke会特殊些，不过也是有迹可循，即为impl.FuncPtr。
 
+下面我们在block外面声明一个变量a，在block内部访问。OC 代码如下：
 
+```javascript
+
+- (instancetype)init {
+
+   self = [super init];
+   if (self) {
+      NSString *a = @"222";
+      void(^test)(void) = ^(){
+      
+      NSLog(@"a=%@",a);
+   };
+   test();
+}
+   return self;
+}
+
+```
+执行clang，摘出主要代码如下。
+
+```javascript
+// __block_impl 结构不变这里就不在重复放代码。
+struct __test__init_block_impl_0 {
+   struct __block_impl impl;
+   struct __test__init_block_desc_0* Desc;
+   //我们可以发现在该结构体内d，多了一个变量“a”;
+   NSString *a;
+   //这里的构造方法也多了一个参数“a”;
+   __test__init_block_impl_0(void *fp, struct __test__init_block_desc_0 *desc, NSString *_a, int flags=0) : a(_a) {
+      impl.isa = &_NSConcreteStackBlock;
+      impl.Flags = flags;
+      impl.FuncPtr = fp;
+      Desc = desc;
+   }
+};
+static void __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) {
+   //这里的__cself 实际就是上面的结构体，__cself—>a，即结构体内a的值。
+   NSString *a = __cself->a; // bound by copy
+   NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_8d5c07_mi_1,a);
+}
+
+//这也是一个不同点，和上面“第一次clang结果”相比，多了两个方法：block_copy_0和block_dispose_0。我会在下面仔细说明
+static void __test__init_block_copy_0(struct __test__init_block_impl_0*dst, struct __test__init_block_impl_0*src) {
+   _Block_object_assign((void*)&dst->a, (void*)src->a, 3/*BLOCK_FIELD_IS_OBJECT*/);
+}
+
+//不同点block_dispose_0。
+static void __test__init_block_dispose_0(struct __test__init_block_impl_0*src) {
+   _Block_object_dispose((void*)src->a, 3/*BLOCK_FIELD_IS_OBJECT*/);   
+}
+
+static struct __test__init_block_desc_0 {
+   size_t reserved;
+   size_t Block_size;
+   void (*copy)(struct __test__init_block_impl_0*, struct __test__init_block_impl_0*);
+   void (*dispose)(struct __test__init_block_impl_0*);
+} __test__init_block_desc_0_DATA = { 0, sizeof(struct __test__init_block_impl_0), __test__init_block_copy_0, __test__init_block_dispose_0};
+
+static instancetype _I_test_init(test * self, SEL _cmd) {
+
+   self = ((test *(*)(__rw_objc_super *, SEL))(void *)objc_msgSendSuper)((__rw_objc_super){(id)self, (id)class_getSuperclass(objc_getClass("test"))}, sel_registerName("init"));
+   if (self) {
+      NSString *a = (NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_8d5c07_mi_0;
+      //这里把“a”作为block构造方法的其中一个参数传入。（block如果捕获外部变量);
+      void(*test)(void) = ((void (*)())&__test__init_block_impl_0((void *)__test__init_block_func_0, &__test__init_block_desc_0_DATA, a, 570425344));
+      ((void (*)(__block_impl *))((__block_impl *)test)->FuncPtr)((__block_impl *)test);
+   }
+   return self;
+}
+
+```
