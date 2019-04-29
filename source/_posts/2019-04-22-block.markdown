@@ -196,7 +196,7 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 }
 
 ```
-先来说下多出来的这个方法: <span>_xx_block_copy_0</span>和 _xx_block_dispose_0，为了方便阅读，下面会把test_init简写为 _xx_ 
+先来说下多出来的这个方法:\_xx_block_copy_0和 _xx_block_dispose_0，为了方便阅读，下面会把test_init简写为 _xx_ 
 当block中捕获对象类型的变量时，我们发现block结构体_xx_block_impl_0的描述结构体_xx_block_desc_0中多了两个参数copy和dispose函数（非对象类型如：int等类型时这不会出现这两个函数）copy和dispose函数中传入的都是_xx_block_impl_0结构体本身。
 #### _Block_object_assign函数调用时机及作用:
 当block进行copy操作的时候就会自动调用_xx_block_desc_0内部的_xx_block_copy_0函数，_xx_block_copy_0函数内部会调用_Block_object_assign函数。
