@@ -139,7 +139,7 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 }
 
 ```
-执行clang，摘出主要代码如下。
+执行clang，摘出主要代码如下。。以下称“第二次clang结果”
 
 ```javascript
 // __block_impl 结构不变这里就不在重复放代码。
@@ -230,20 +230,21 @@ clang之后的代码
 
 ```javascript
 
+//对比之前多出来的结构体，对应之前的“a”变量
 struct __Block_byref_a_0 {
-   void *__isa;
-   __Block_byref_a_0 *__forwarding;
+   void *__isa;                      //熟悉的isa指针
+   __Block_byref_a_0 *__forwarding;  //指向”a“地址的指针
    int __flags;
    int __size;
    void (*__Block_byref_id_object_copy)(void*, void*);
    void (*__Block_byref_id_object_dispose)(void*);
-   NSNumber *a;
+   NSNumber *a;                     //"a"的值
 };
 
 struct __test__init_block_impl_0 {
    struct __block_impl impl;
    struct __test__init_block_desc_0* Desc;
-   __Block_byref_a_0 *a; // by ref
+   __Block_byref_a_0 *a; // by ref   对应“第二次clang”中的变量”a“
    __test__init_block_impl_0(void *fp, struct __test__init_block_desc_0 *desc, __Block_byref_a_0 *_a, int flags=0) : a(_a->__forwarding) {
       impl.isa = &_NSConcreteStackBlock;
       impl.Flags = flags;
@@ -256,9 +257,12 @@ static void __test__init_block_func_0(struct __test__init_block_impl_0 *__cself)
    (a->__forwarding->a) = ((NSNumber *(*)(Class, SEL, int))(void *)objc_msgSend)(objc_getClass("NSNumber"), sel_registerName("numberWithInt:"), 333);
    NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_b1d4ff_mi_0,(a->__forwarding->a));
 }
+
+//对应“第二次clang”中的copy方法
 static void __test__init_block_copy_0(struct __test__init_block_impl_0*dst, struct __test__init_block_impl_0*src) {
    _Block_object_assign((void*)&dst->a, (void*)src->a, 8/*BLOCK_FIELD_IS_BYREF*/);}
 
+//对应“第二次clang”中的dispose方法
 static void __test__init_block_dispose_0(struct __test__init_block_impl_0*src) {
    _Block_object_dispose((void*)src->a, 8/*BLOCK_FIELD_IS_BYREF*/);   
 }
@@ -274,6 +278,8 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 
    self = ((test *(*)(__rw_objc_super *, SEL))(void *)objc_msgSendSuper)((__rw_objc_super){(id)self, (id)class_getSuperclass(objc_getClass("test"))}, sel_registerName("init"));
    if (self) {
+      
+      //构造Block_byref_a_0结构体，第二参数传入的”a“的地址（对应”__forwarding“参数），最后一个参数传入”a“的值
       __attribute__((__blocks__(byref))) __Block_byref_a_0 a = {(void*)0,(__Block_byref_a_0 *)&a, 33554432, sizeof(__Block_byref_a_0), __Block_byref_id_object_copy_131, __Block_byref_id_object_dispose_131, ((NSNumber *(*)(Class, SEL, int))(void *)objc_msgSend)(objc_getClass("NSNumber"), sel_registerName("numberWithInt:"), 22)};
 
       void(*test)(void) = ((void (*)())&__test__init_block_impl_0((void *)__test__init_block_func_0, &__test__init_block_desc_0_DATA, (__Block_byref_a_0 *)&a, 570425344));
@@ -282,3 +288,4 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
    return self;
 }
 ```
+
