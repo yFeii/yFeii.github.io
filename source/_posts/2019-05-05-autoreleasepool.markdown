@@ -37,7 +37,7 @@ struct __AtAutoreleasePool {
    void * atautoreleasepoolobj;
 };
 ```
-上面是\_\_AtAutoreleasePool结构体的组成，其中主要的两个方法 *objc_autoreleasePoolPush()* 和*objc_autoreleasePoolPop()*，这两个方法我们可以在[NSObject.mm的源码](https://opensource.apple.com/source/objc4/objc4-646/runtime/NSObject.mm.auto.html)中找到实现如下：
+上面是\_\_AtAutoreleasePool结构体的组成，其中主要的两个方法 <code>objc_autoreleasePoolPush()</code> 和*objc_autoreleasePoolPop()*，这两个方法我们可以在[NSObject.mm的源码](https://opensource.apple.com/source/objc4/objc4-646/runtime/NSObject.mm.auto.html)中找到实现如下：
 ```javascript
 void *objc_autoreleasePoolPush(void){
    if (UseGC) return nil;
