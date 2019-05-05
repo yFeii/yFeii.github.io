@@ -206,7 +206,7 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 当block从堆中移除时就会自动调用\_xx_block_desc_0中的\_xx_block_dispose_0函数，\_xx_block_dispose_0函数内部会调用\_Block_object_dispose函数。
 \_Block_object_dispose会对“a”对象做释放操作，类似于release，也就是断开对“a”对象的引用，而“a”究竟是否被释放还是取决于“a”对象自己的引用计数。
 
-#### \__block 
+#### \_\_block 
 下面我们来修改代码 加上关键字\__block，OC：
 ```javascript
 
@@ -288,8 +288,11 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
    return self;
 }
 ```
-加上“\__block”关键字之后，
-1.源码中新增加了一个名为“\__Block_byref_a_0”的结构体，用来保存我们要捕获并且修改的变量“a”。
-2.“\__Block_byref_a_0”结构体带有“isa”指针，变量“a”的值及地址。
-3.同样增加的copy和dispose函数，用于“\__Block_byref_a_0”结构体的内存管理。
+加上“\_\_block”关键字之后。
+
+1.源码中新增加了一个名为“\_\_Block_byref_a_0”的结构体，用来保存我们要捕获并且修改的变量“a”。
+
+2.“\_\_Block_byref_a_0”结构体带有“isa”指针，变量“a”的值及地址。
+
+3.同样增加的copy和dispose函数，用于“\_\_Block_byref_a_0”结构体的内存管理。
 
