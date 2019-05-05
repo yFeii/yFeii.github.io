@@ -288,4 +288,8 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
    return self;
 }
 ```
+加上“__block”关键字之后，
+1.源码中新增加了一个名为“__Block_byref_a_0”的结构体，用来保存我们要捕获并且修改的变量“a”。
+2.“__Block_byref_a_0”结构体带有“isa”指针，变量“a”的值及地址。
+3.同样增加的copy和dispose函数，用于“__Block_byref_a_0”结构体的内存管理。
 
