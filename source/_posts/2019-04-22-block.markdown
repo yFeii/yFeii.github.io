@@ -289,10 +289,12 @@ static instancetype _I_test_init(test * self, SEL _cmd) {
 }
 ```
 加上“\_\_block”关键字之后。
-
 1.源码中新增加了一个名为“\_\_Block_byref_a_0”的结构体，用来保存我们要捕获并且修改的变量“a”。
-
 2.“\_\_Block_byref_a_0”结构体带有“isa”指针，变量“a”的值及地址。
-
 3.同样增加的copy和dispose函数，用于“\_\_Block_byref_a_0”结构体的内存管理。
 
+### 循环引用问题
+1.为什么会产生循环引用？
+答：当block内部捕获的变量类型为对象时。会增加“copy”和“dispose”来管理变量内存，当变量本身被“strong”修饰时，copy内部调用assign会再次进行强引用：引用计数+1，此时如果变量对block有强引用关系（如block为变量的属性等）便会导致循环引用。 
+2.为何加上“\_\_weak”之后可以避免循环引用？
+答：在copy内部调用assign时，如果此时变量的修饰类型为“weak”，则assign函数则不会进行“+1”的行为，所以不会产生循环引用。
