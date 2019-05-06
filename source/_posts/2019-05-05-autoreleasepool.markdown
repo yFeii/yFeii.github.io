@@ -55,7 +55,8 @@ void objc_autoreleasePoolPop(void *ctxt) {
 ### autoreleasepool在主线程的释放时机   
 在demo中加入新的断点。如果在主线程，直接执行lldb命令：<code>po [NSRunLoop currentRunLoop]</code> 如果在子线程则需要MainRunLoop。  
 ![断点结果](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/autoreleasepool/1.png)  
-图片如果看不清的同学可以浏览器网页缩放下。我们可以看到主线程的<code>runLoop</code> 中有两个<code>Observer</code>，并且 <code>activities</code> 分别为“0xa0”和“0x1”这是两个十六进制的树，转为二进制分别为“1”和“10100000”，对应<code>CFRunLoopActivity</code>的类型如下：  
+图片如果看不清的同学可以浏览器网页缩放下。  
+我们可以看到主线程的<code>runLoop</code> 中有两个<code>Observer</code>，并且 <code>activities</code> 分别为“0xa0”和“0x1”这是两个十六进制的数，转为二进制分别为“1”和“10100000”，对应<code>CFRunLoopActivity</code>的类型如下：  
 
 ```javascript
 /* Run Loop Observer Activities */
@@ -76,12 +77,12 @@ typedef CF_OPTIONS(CFOptionFlags, CFRunLoopActivity) {
 
 另一个监听器监听<code>RunLoop</code>对象进入休眠和退出循环的事件，回调函数同样是<code>_wrapRunLoopWithAutoreleasePoolHandler</code>，而优先级为<code>2147483647</code>即32位整数的最大值，保证它的优先级最低。对于监听进入休眠状态时回调函数内首先会调用<code>_objc_autoreleasePoolPop</code>函数来释放<code>AutoreleasePool</code>然后使用<code>_objc_autoreleasePoolPush</code>函数重新创建一个自动释放池。优先级最低保证了释放操作是在其他所有回调执行之后发生。  
 
-### <code>autoreleasepool</code>在子线程的释放时机(子线程默认不开启runloop)  。  
+### <code>autoreleasepool</code>在子线程的释放时机  
 问题分解：  
-1. 子线程中释放存在<code>AutoreleasePool</code>？  
+1. 子线程中是否存在<code>AutoreleasePool</code>？  
 2. 如果存在，那么里面的<code>autorelease</code>对象如何释放呢？  
 3. 如果不存在，如何建立一个<code>autoreleasepool</code>？  
-4. 自己建立的<code>autoreleasepool</code>合适释放？  
+4. 自己建立的<code>autoreleasepool</code>何时释放？  
 
 先来回答第一个问题，这里有一份[苹果的开发文档](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/MemoryMgmt/Articles/mmAutoreleasePools.html#//apple_ref/doc/uid/20000047-1041876)这里明确的指出了 
 > Each thread in a Cocoa application maintains its own stack of autorelease pool blocks.  
@@ -153,5 +154,5 @@ AutoReleaseModel *model = [[AutoReleaseModel alloc] init];
                      └── id *add(id obj)
 ```
 ### 结论
-1. 在不自己建立<code>@AutoreleasePool</code>的情况下，主线程的<code>autorelease</code>是通过监听<code>CFRunLoopObserver</code>来时决定释放时机的，而子线程则是在退出线程的时候来释放<code>autorelease</code>对象。  
+1. 在不自己建立<code>@AutoreleasePool</code>的情况下，主线程是通过监听<code>CFRunLoopObserver</code>来决定释放<code>autorelease</code>对象的时机的，而子线程则是在退出线程的时候来释放<code>autorelease</code>对象。  
 2. 如果自己手动建立 <code>@AutoreleasePool</code>，那么<code>autorelease</code>对象的声明周期仅在block块内，不论在主线程还是子线程都是如此。
