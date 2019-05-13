@@ -54,7 +54,7 @@ NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png)
 在<code>class</code>的实现中，我们看到其返回值为<code>isa</code>，同时我们也注意到，在发起消息时传入的接收者都为<code>self</code>(obj1和obj2的示例中，即为runtimeTest类的实例)，
 所以在其父类的<code>class</code>方法实现中，此时<code>isa</code> 也都为<code>runtimeTest</code>类，所以我们最终obj1和obj2的打印结果都为runtimeTest,  
-但是在obj3和obj4的实例中，superclass方法返回的是((struct objc_class *)self)->super_class。所以结果也为runtimeTest的父类即：NSObject
+但是在obj3和obj4的实例中，<code>superclass</code>方法返回的是<code>((struct objc_class *)self)->super_class</code>。所以结果为<code>runtimeTest</code>的父类即：<code>NSObject</code> 。  
 **2019.05.13更新**
 >>这里面有一个错误，就是上面截图的class方法  是类方法，并不是实例方法。下面补充实例方法的实现
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/self_super/1.png)
