@@ -39,7 +39,7 @@ NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz
 NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_2,obj3);
 NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_3,obj4);
 ```
-从<code>objc/message.h</code>中 <code>objc_msgSend <code>的参数说明可以看出其第一个参数为消息的接收者，
+从<code>objc/message.h</code>中 <code>objc_msgSend </code>的参数说明可以看出其第一个参数为消息的接收者，
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png)
 而<code>objc_msgSendSuper </code>参数的说明中，我们需要注意一点，<code>objc_msgSendSuper</code>方法是直接从父类的方法列表中找实现，所以当我们使用<code>super</code>调用
 方法时，运行时会将<code>[super callFunction]</code>转换为<code>objc_msgSendSuper</code>并且父类的方法中寻找实现，以此来实现调用父类方法，如下图
@@ -53,7 +53,7 @@ NSLog((NSString *)&__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz
 下面在来看NSObject的<code>class</code>方法实现[源码地址](https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html)
 ![Markdown](https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png)
 在<code>class</code>的实现中，我们看到其返回值为<code>isa</code>，同时我们也注意到，在发起消息时传入的接收者都为<code>self</code>(obj1和obj2的示例中，即为runtimeTest类的实例)，
-所以在其父类的<code>class<code/>方法实现中，此时<code>isa</code> 也都为<code>runtimeTest</code>类，所以我们最终obj1和obj2的打印结果都为runtimeTest,  
+所以在其父类的<code>class</code>方法实现中，此时<code>isa</code> 也都为<code>runtimeTest</code>类，所以我们最终obj1和obj2的打印结果都为runtimeTest,  
 但是在obj3和obj4的实例中，superclass方法返回的是((struct objc_class *)self)->super_class。所以结果也为runtimeTest的父类即：NSObject
 **2019.05.13更新**
 >>这里面有一个错误，就是上面截图的class方法  是类方法，并不是实例方法。下面补充实例方法的实现
