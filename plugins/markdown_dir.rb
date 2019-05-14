@@ -1,4 +1,4 @@
-require './plugins/post_filters'
+require './plugins/octopress_filters'
 module MarkdowndirFilter
     @@ind = 0
     def generatedir(post)
