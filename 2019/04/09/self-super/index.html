@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>self super | 逆水行舟</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta name="keywords" content="iOS blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="self super">
+<meta property="og:url" content="http://yfeii.github.io/2019/04/09/self-super/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041002.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/self_super/1.png">
+<meta property="og:updated_time" content="2019-05-13T09:57:10.554Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="self super">
+<meta name="twitter:description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png">
+  
+    <link rel="alternate" href="/atom.xml" title="逆水行舟" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">逆水行舟</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yfeii.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-self-super" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/09/self-super/" class="article-date">
+  <time datetime="2019-04-09T09:44:00.000Z" itemprop="datePublished">2019-04-09</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      self super
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>重新认识下 self super，及msgSend msgSendSuper<a id="more"></a></p>
+<h3 id="先看几行行老生常谈的代码。。。"><a href="#先看几行行老生常谈的代码。。。" class="headerlink" title="先看几行行老生常谈的代码。。。"></a>先看几行行老生常谈的代码。。。</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">id obj1 = self.class;</span><br><span class="line">id obj2 = <span class="keyword">super</span>.class;</span><br><span class="line">id obj3 = self.superclass;</span><br><span class="line">id obj4 = <span class="keyword">super</span>.superclass;</span><br><span class="line"></span><br><span class="line">NSLog(@<span class="string">"obj1 = %@"</span>,obj1);</span><br><span class="line">NSLog(@<span class="string">"obj2 = %@"</span>,obj2);</span><br><span class="line">NSLog(@<span class="string">"obj3 = %@"</span>,obj3);</span><br><span class="line">NSLog(@<span class="string">"obj4 = %@"</span>,obj4);</span><br></pre></td></tr></table></figure>
+<p>其输出结果如图所示：(其中<code> runtimeTest</code> 继承<code>NSObject</code>,我们在<code>runtimeTest</code>类中 测试如上代码)</p>
+<p><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png" alt="Markdown"></p>
+<p>利用<code>clang </code>命令查看其C++实现  ，其中XXXX 为目标文件<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clang -x objective-c -rewrite-objc -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk XXXX.m</span><br></pre></td></tr></table></figure></p>
+<p>其编译结果为<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">id obj1 = ((Class (*)(id, SEL))(<span class="keyword">void</span> *)objc_msgSend)((id)self, sel_registerName(<span class="string">"class"</span>));</span><br><span class="line">id obj2 = ((Class (*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"runtimeTest"</span>))&#125;, sel_registerName(<span class="string">"class"</span>));</span><br><span class="line">id obj3 = ((Class (*)(id, SEL))(<span class="keyword">void</span> *)objc_msgSend)((id)self, sel_registerName(<span class="string">"superclass"</span>));</span><br><span class="line">id obj4 = ((Class (*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"runtimeTest"</span>))&#125;, sel_registerName(<span class="string">"superclass"</span>));</span><br><span class="line"></span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_0,obj1);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_1,obj2);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_2,obj3);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_3,obj4);</span><br></pre></td></tr></table></figure></p>
+<p>从<code>objc/message.h</code>中 <code>objc_msgSend </code>的参数说明可以看出其第一个参数为消息的接收者，<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png" alt="Markdown"><br>而<code>objc_msgSendSuper </code>参数的说明中，我们需要注意一点，<code>objc_msgSendSuper</code>方法是直接从父类的方法列表中找实现，所以当我们使用<code>super</code>调用<br>方法时，运行时会将<code>[super callFunction]</code>转换为<code>objc_msgSendSuper</code>并且父类的方法中寻找实现，以此来实现调用父类方法，如下图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041002.png" alt="Markdown"></p>
+<p><code>objc_msgSendSuper</code>第一个参数为一个名为<code>objc_super </code>的结构体，其构成如下<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png" alt="Markdown"></p>
+<p>从上面的<code>obj1</code>和<code>obj2</code> 的示例里可以看出，<code>obj1</code>的接受者参数为<code>self</code>，<code>obj2</code>在<code>objc_super</code>的结构体中，<code>receiver</code>的值同样是<code>self</code>.<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png" alt="Markdown"><br>下面在来看NSObject的<code>class</code>方法实现<a href="https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html" target="_blank" rel="noopener">源码地址</a><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png" alt="Markdown"><br>在<code>class</code>的实现中，我们看到其返回值为<code>isa</code>，同时我们也注意到，在发起消息时传入的接收者都为<code>self</code>(obj1和obj2的示例中，即为runtimeTest类的实例)，<br>所以在其父类的<code>class</code>方法实现中，此时<code>isa</code> 也都为<code>runtimeTest</code>类，所以我们最终obj1和obj2的打印结果都为runtimeTest,<br>但是在obj3和obj4的实例中，<code>superclass</code>方法返回的是<code>((struct objc_class *)self)-&gt;super_class</code>。所以结果为<code>runtimeTest</code>的父类即：<code>NSObject</code> 。<br><strong>2019.05.13更新</strong></p>
+<blockquote>
+<blockquote>
+<p>这里面有一个错误，就是上面截图的class方法  是类方法，并不是实例方法。下面补充实例方法的实现<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/self_super/1.png" alt="Markdown"></p>
+</blockquote>
+</blockquote>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><ul>
+<li><code>self</code> 与<code>super</code> 在调用方法时，在运行时的变现有所不同，<code>self</code>为<code>objc_msgSend</code>，<code>super</code>为<code>objc_msgSendSuper</code>。</li>
+<li><code>objc_msgSend</code> 会优先从当前类中找实现。</li>
+<li><code>objc_msgSendSuper</code> 直接从父类中寻找实现。</li>
+<li>之所以上面4个示例的输出结果为runtimeTest，runtimeTest，NSObject，NSObject，是由消息的接收者与父类的方法共同决定的。</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yfeii.github.io/2019/04/09/self-super/" data-id="cjvn9tudh0006z7rwm2v626x4" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/04/11/at-synthesize/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          @synthesize
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/03/05/di-san-fang-xue-xi-ji-lu-zhi-yymemorycache/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">第三方学习记录之YYMemoryCache</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">April 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">September 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/13/runtimezong-jie/">runtime总结</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/05/autoreleasepool/">autoreleasepool</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/22/block/">block</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/11/at-synthesize/">@synthesize</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/09/self-super/">self super</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 yfeii<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>

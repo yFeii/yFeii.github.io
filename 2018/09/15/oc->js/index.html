@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>OC和JS 交互 | 逆水行舟</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等">
+<meta name="keywords" content="iOS blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OC和JS 交互">
+<meta property="og:url" content="http://yfeii.github.io/2018/09/15/oc->js/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等">
+<meta property="og:locale" content="default">
+<meta property="og:image" content="http://outodkqy4.bkt.clouddn.com/WechatIMG11.jpeg">
+<meta property="og:updated_time" content="2018-09-15T04:05:12.353Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OC和JS 交互">
+<meta name="twitter:description" content="最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等">
+<meta name="twitter:image" content="http://outodkqy4.bkt.clouddn.com/WechatIMG11.jpeg">
+  
+    <link rel="alternate" href="/atom.xml" title="逆水行舟" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">逆水行舟</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yfeii.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-oc-&gt;js" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2018/09/15/oc->js/" class="article-date">
+  <time datetime="2018-09-15T02:27:30.000Z" itemprop="datePublished">2018-09-15</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      OC和JS 交互
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>最近在做hybrid app,本文主要阐述些oc与js交互方式，和交互过程中遇到的一些坑，包括iOS低版本的兼容问题等<a id="more"></a></p>
+<p>交互方案 基于WKWebview（UIWebview也可），此方案不但可以用正常业务交互，也可把前端请求放在客户端来做，这样避免客户端与前端API环境不统一的问题。</p>
+<p>前端部分<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">JSBridge.invoke(&#123;action,params,callback&#125;);</span><br><span class="line">native 在加载webview 之前须设置UserAgent   拼接 <span class="string">"js_nativeApp"</span></span><br><span class="line">action: <span class="comment">//执行操作标识，必须提供，字符串形式，操作对应见下</span></span><br><span class="line">params: <span class="comment">//执行操作所附带参数，可选提供，js对象，例如</span></span><br><span class="line"></span><br><span class="line">&#123;</span><br><span class="line">    num1: <span class="number">1</span>,</span><br><span class="line">    text1: <span class="string">'kk'</span>,</span><br><span class="line">    array1: [<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>],</span><br><span class="line">    array2: [<span class="string">'a'</span>, <span class="string">'b'</span>, <span class="string">'c'</span>],</span><br><span class="line">    obj1: &#123;</span><br><span class="line">    aaa: <span class="string">"bbb"</span>,</span><br><span class="line">    ccc: <span class="number">1111</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br><span class="line">callback(即callId): 执行完成后的回调函数（如果有），用于下文 移动端回调时传回</span><br></pre></td></tr></table></figure></p>
+<p>app部分</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">如果存在回调关系</span><br><span class="line"></span><br><span class="line">nativeCallBack(callId,action,callback);</span><br><span class="line">callId: <span class="comment">//从前端获得并传回</span></span><br><span class="line">action <span class="comment">//从前端获得并传回</span></span><br><span class="line">callback: <span class="comment">//执行完成后的回调函数（如果有）</span></span><br><span class="line">如果不存在回调关系</span><br><span class="line"></span><br><span class="line">nativeCallJS(params)</span><br><span class="line">params: 结构如下</span><br><span class="line">&#123;</span><br><span class="line">    action: <span class="string">"reload"</span>,         <span class="comment">//必选</span></span><br><span class="line">    data: &#123;             <span class="comment">//可选，如果提供则传给相应功能页面</span></span><br><span class="line">    aaa: <span class="string">"bbb"</span></span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>交互流程如下图</p>
+<p><img src="http://outodkqy4.bkt.clouddn.com/WechatIMG11.jpeg" alt="Markdown"></p>
+<p>开发过程中遇到的问题</p>
+<ul>
+<li>wkwebview在iOS 10之前有很多bug 可参考 <a href="https://github.com/li6185377/IMYWebView/tree/master/IMYWebView" target="_blank" rel="noopener">IMYWebview</a></li>
+<li>前端需引入版本兼容编译器：语法转换，支持客户端低版本，一些es6的语法在iOS8,9上不兼容，会出现js加载失败(js交互失效,点击失效)造成的bug</li>
+<li>可引入 <a href="https://www.npmjs.com/package/vconsole" target="_blank" rel="noopener">vconsole</a> 协助前端debug</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yfeii.github.io/2018/09/15/oc->js/" data-id="cjvn9tudg0005z7rwzm96it7l" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2018/10/13/zhou-bao/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          周报 第1期
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2018/02/28/geng-xin-liao-rubyzhi-hou/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">更新了ruby之后 - -</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">April 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">September 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/13/runtimezong-jie/">runtime总结</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/05/autoreleasepool/">autoreleasepool</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/22/block/">block</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/11/at-synthesize/">@synthesize</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/09/self-super/">self super</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 yfeii<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>

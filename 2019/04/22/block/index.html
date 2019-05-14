@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+
+  
+  <title>block | 逆水行舟</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="block的实现原理，对象模型">
+<meta name="keywords" content="iOS blog">
+<meta property="og:type" content="article">
+<meta property="og:title" content="block">
+<meta property="og:url" content="http://yfeii.github.io/2019/04/22/block/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="block的实现原理，对象模型">
+<meta property="og:locale" content="default">
+<meta property="og:updated_time" content="2019-05-05T03:11:21.749Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="block">
+<meta name="twitter:description" content="block的实现原理，对象模型">
+  
+    <link rel="alternate" href="/atom.xml" title="逆水行舟" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+</html>
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">逆水行舟</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yfeii.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-block" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2019/04/22/block/" class="article-date">
+  <time datetime="2019-04-22T03:20:37.000Z" itemprop="datePublished">2019-04-22</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      block
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>block的实现原理，对象模型<a id="more"></a></p>
+<h3 id="数据结构定义"><a href="#数据结构定义" class="headerlink" title="数据结构定义"></a>数据结构定义</h3><p>从苹果的llvm<a href="!http://clang.llvm.org/docs/Block-ABI-Apple.html#id2">开源代码中</a>,我们可以看到block的数据结构定义如下：<strong><em>示例A</em></strong>。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">struct Block_literal_1 &#123;</span><br><span class="line">   <span class="keyword">void</span> *isa; <span class="comment">// initialized to &amp;_NSConcreteStackBlock or &amp;_NSConcreteGlobalBlock</span></span><br><span class="line">   int flags;</span><br><span class="line">   int reserved;</span><br><span class="line">   <span class="keyword">void</span> (*invoke)(<span class="keyword">void</span> *, ...);</span><br><span class="line">   struct Block_descriptor_1 &#123;</span><br><span class="line">       unsigned long int reserved;         <span class="comment">// NULL</span></span><br><span class="line">       unsigned long int size;         <span class="comment">// sizeof(struct Block_literal_1)</span></span><br><span class="line">       <span class="comment">// optional helper functions</span></span><br><span class="line">       <span class="keyword">void</span> (*copy_helper)(<span class="keyword">void</span> *dst, <span class="keyword">void</span> *src);     <span class="comment">// IFF (1&lt;&lt;25)</span></span><br><span class="line">       <span class="keyword">void</span> (*dispose_helper)(<span class="keyword">void</span> *src);             <span class="comment">// IFF (1&lt;&lt;25)</span></span><br><span class="line">       <span class="comment">// required ABI.2010.3.16</span></span><br><span class="line">       <span class="keyword">const</span> char *signature;                         <span class="comment">// IFF (1&lt;&lt;30)</span></span><br><span class="line">   &#125; *descriptor;</span><br><span class="line">   <span class="comment">// imported variables</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>通过上面的代码，我们可以知道，一个block对象实际是由6个部分组成，我们姑且那上面的示例代码成为</p>
+<ul>
+<li>isa指针：OC对象都有该指针，用于实现对象相关的功能。</li>
+<li>flags：用于按bit位表示一些block的附加信息。</li>
+<li>reserved：保留变量。</li>
+<li>invoke：函数指针，指向具体的block实现的函数调用地址，相当于clang编译器下的impl，命名不一样而已！</li>
+<li>descriptor：表示该block的附加描述信息，主要是size大小，以及copy和dispose函数的指针。</li>
+<li>variables：capture过来的变量，block能够访问它外部的局部变量，就是因为将这些变量(或变量的地址)复制到了结构体中。</li>
+</ul>
+<p>该数据结构和clang分析出来的结构实际上是一样的，仅仅是结构体的嵌套方式不一样。比如，下面两个结构体的嵌套方式不一样，但是在内存上是完全一样的，原因是结构体本身并不带有任何额外的附加信息：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">struct SampleA &#123;</span><br><span class="line">   int a;</span><br><span class="line">   int b;</span><br><span class="line">   int c;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">struct SampleB&#123;</span><br><span class="line">   int a;</span><br><span class="line">   struct Part1 &#123;</span><br><span class="line">      int b;</span><br><span class="line">   &#125;;</span><br><span class="line">   struct Part2&#123;</span><br><span class="line">      int c;</span><br><span class="line">   &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="用clang分析block实现"><a href="#用clang分析block实现" class="headerlink" title="用clang分析block实现"></a>用clang分析block实现</h3><p>新建工程，新建类test(这里类名和变量名最好不要用带block关键字的，因为后面clang后，变量名会自动填充一些关键字)。test.m中代码如下<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">- (instancetype)init &#123;</span><br><span class="line"></span><br><span class="line">   self = [<span class="keyword">super</span> init];</span><br><span class="line">   <span class="keyword">if</span> (self) &#123;</span><br><span class="line">   <span class="keyword">void</span>(^test)(<span class="keyword">void</span>) = ^()&#123;</span><br><span class="line"></span><br><span class="line">      NSLog(@<span class="string">"11"</span>);</span><br><span class="line">   &#125;;</span><br><span class="line">   test();</span><br><span class="line">&#125;</span><br><span class="line">  <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>执行clang，摘出主要代码如下。以下称“第一次clang结果”</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">struct __block_impl &#123;</span><br><span class="line">   <span class="keyword">void</span> *isa;</span><br><span class="line">   int Flags;</span><br><span class="line">   int Reserved;</span><br><span class="line">   <span class="keyword">void</span> *FuncPtr; <span class="comment">//函数指针</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//这种就是之前说的 为什么尽量不要用block的命名，在执行clang之后，struct名是由类名+方法名的方式拼接成。</span></span><br><span class="line">struct __test__init_block_impl_0 &#123;</span><br><span class="line">    struct __block_impl impl;</span><br><span class="line">    struct __test__init_block_desc_0* Desc;</span><br><span class="line">    __test__init_block_impl_0(<span class="keyword">void</span> *fp, struct __test__init_block_desc_0 *desc, int flags=<span class="number">0</span>) &#123;</span><br><span class="line">        impl.isa = &amp;_NSConcreteStackBlock;</span><br><span class="line">        impl.Flags = flags;</span><br><span class="line">        impl.FuncPtr = fp;   <span class="comment">//函数指针,可以从下面调用block传入的参数看出，这里指向了 __test__init_block_func_0</span></span><br><span class="line">        Desc = desc;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) &#123;</span><br><span class="line">    <span class="comment">//真正的NSLog在这里</span></span><br><span class="line">    NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_0cd5eb_mi_0);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//示例A 中的descriptor。</span></span><br><span class="line"><span class="keyword">static</span> struct __test__init_block_desc_0 &#123;</span><br><span class="line">    size_t reserved;</span><br><span class="line">    size_t Block_size;</span><br><span class="line">&#125; __test__init_block_desc_0_DATA = &#123; <span class="number">0</span>, sizeof(struct __test__init_block_impl_0)&#125;;</span><br><span class="line"></span><br><span class="line"><span class="comment">//对应OC的重写初始化方法</span></span><br><span class="line"><span class="keyword">static</span> instancetype _I_test_init(test * self, SEL _cmd) &#123;</span><br><span class="line"></span><br><span class="line">    self = ((test *(*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"test"</span>))&#125;, sel_registerName(<span class="string">"init"</span>));</span><br><span class="line">    <span class="keyword">if</span> (self) &#123;</span><br><span class="line">    <span class="comment">//__test__init_block_impl_0的第一个参数*fp，其值为__test__init_block_func_0。</span></span><br><span class="line">        <span class="keyword">void</span>(*test)(<span class="keyword">void</span>) = ((<span class="keyword">void</span> (*)())&amp;__test__init_block_impl_0((<span class="keyword">void</span> *)__test__init_block_func_0, &amp;__test__init_block_desc_0_DATA));</span><br><span class="line">        ((<span class="keyword">void</span> (*)(__block_impl *))((__block_impl *)test)-&gt;FuncPtr)((__block_impl *)test);</span><br><span class="line">  &#125;</span><br><span class="line">    <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>根据注释我们可以看出上面的结构跟示例A 是基本对的上，invoke会特殊些，不过也是有迹可循，即为impl.FuncPtr。</p>
+<h4 id="下面我们在block外面声明一个变量a，在block内部访问。OC-代码如下："><a href="#下面我们在block外面声明一个变量a，在block内部访问。OC-代码如下：" class="headerlink" title="下面我们在block外面声明一个变量a，在block内部访问。OC 代码如下："></a>下面我们在block外面声明一个变量a，在block内部访问。OC 代码如下：</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- (instancetype)init &#123;</span><br><span class="line"></span><br><span class="line">   self = [<span class="keyword">super</span> init];</span><br><span class="line">   <span class="keyword">if</span> (self) &#123;</span><br><span class="line">      NSString *a = @<span class="string">"222"</span>;</span><br><span class="line">      <span class="keyword">void</span>(^test)(<span class="keyword">void</span>) = ^()&#123;</span><br><span class="line">      </span><br><span class="line">      NSLog(@<span class="string">"a=%@"</span>,a);</span><br><span class="line">   &#125;;</span><br><span class="line">   test();</span><br><span class="line">&#125;</span><br><span class="line">   <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行clang，摘出主要代码如下。。以下称“第二次clang结果”</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// __block_impl 结构不变这里就不在重复放代码。</span></span><br><span class="line">struct __test__init_block_impl_0 &#123;</span><br><span class="line">   struct __block_impl impl;</span><br><span class="line">   struct __test__init_block_desc_0* Desc;</span><br><span class="line">   <span class="comment">//我们可以发现在该结构体内d，多了一个变量“a”;</span></span><br><span class="line">   NSString *a;</span><br><span class="line">   <span class="comment">//这里的构造方法也多了一个参数“a”;</span></span><br><span class="line">   __test__init_block_impl_0(<span class="keyword">void</span> *fp, struct __test__init_block_desc_0 *desc, NSString *_a, int flags=<span class="number">0</span>) : a(_a) &#123;</span><br><span class="line">      impl.isa = &amp;_NSConcreteStackBlock;</span><br><span class="line">      impl.Flags = flags;</span><br><span class="line">      impl.FuncPtr = fp;</span><br><span class="line">      Desc = desc;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) &#123;</span><br><span class="line">   <span class="comment">//这里的__cself 实际就是上面的结构体，__cself—&gt;a，即结构体内a的值。</span></span><br><span class="line">   NSString *a = __cself-&gt;a; <span class="comment">// bound by copy</span></span><br><span class="line">   NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_8d5c07_mi_1,a);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//不同点，和上面“第一次clang结果”相比，多了两个方法：block_copy_0和block_dispose_0</span></span><br><span class="line"><span class="comment">//下面方法参数为__test__init_block_impl_0结构体，</span></span><br><span class="line"><span class="comment">//内部调用的是_Block_object_assign方法，且操作了参数结构体内的“a”变量，如何操作下面会仔细说明。</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_copy_0(struct __test__init_block_impl_0*dst, struct __test__init_block_impl_0*src) &#123;</span><br><span class="line">   _Block_object_assign((<span class="keyword">void</span>*)&amp;dst-&gt;a, (<span class="keyword">void</span>*)src-&gt;a, <span class="number">3</span><span class="comment">/*BLOCK_FIELD_IS_OBJECT*/</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//不同点。</span></span><br><span class="line"><span class="comment">//下面方法参数同为__test__init_block_impl_0。</span></span><br><span class="line"><span class="comment">//方法内部调用的是 _Block_object_dispose，同样操作了参数结构体内的“a”变量，如何操作下面会仔细说明</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_dispose_0(struct __test__init_block_impl_0*src) &#123;</span><br><span class="line">   _Block_object_dispose((<span class="keyword">void</span>*)src-&gt;a, <span class="number">3</span><span class="comment">/*BLOCK_FIELD_IS_OBJECT*/</span>);   </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> struct __test__init_block_desc_0 &#123;</span><br><span class="line">   size_t reserved;</span><br><span class="line">   size_t Block_size;</span><br><span class="line">   <span class="keyword">void</span> (*copy)(struct __test__init_block_impl_0*, struct __test__init_block_impl_0*);</span><br><span class="line">   <span class="keyword">void</span> (*dispose)(struct __test__init_block_impl_0*);</span><br><span class="line">&#125; __test__init_block_desc_0_DATA = &#123; <span class="number">0</span>, sizeof(struct __test__init_block_impl_0), __test__init_block_copy_0, __test__init_block_dispose_0&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> instancetype _I_test_init(test * self, SEL _cmd) &#123;</span><br><span class="line"></span><br><span class="line">   self = ((test *(*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"test"</span>))&#125;, sel_registerName(<span class="string">"init"</span>));</span><br><span class="line">   <span class="keyword">if</span> (self) &#123;</span><br><span class="line">      NSString *a = (NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_8d5c07_mi_0;</span><br><span class="line">      <span class="comment">//这里把“a”作为block构造方法的其中一个参数传入。（block如果捕获外部变量);</span></span><br><span class="line">      <span class="keyword">void</span>(*test)(<span class="keyword">void</span>) = ((<span class="keyword">void</span> (*)())&amp;__test__init_block_impl_0((<span class="keyword">void</span> *)__test__init_block_func_0, &amp;__test__init_block_desc_0_DATA, a, <span class="number">570425344</span>));</span><br><span class="line">      ((<span class="keyword">void</span> (*)(__block_impl *))((__block_impl *)test)-&gt;FuncPtr)((__block_impl *)test);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先来说下多出来的这个方法:_xx_block_copy_0和 _xx_block_dispose_0，为了方便阅读，下面会把__test_init简写为 _xx_ </p>
+<p>当block中捕获对象类型的变量时，我们发现block结构体_xx_block_impl_0的描述结构体_xx_block_desc_0中多了两个参数copy和dispose函数（非对象类型如：int等类型时这不会出现这两个函数）copy和dispose函数中传入的都是_xx_block_impl_0结构体本身。</p>
+<h4 id="Block-object-assign函数调用时机及作用"><a href="#Block-object-assign函数调用时机及作用" class="headerlink" title="_Block_object_assign函数调用时机及作用:"></a>_Block_object_assign函数调用时机及作用:</h4><p>当block进行copy操作的时候就会自动调用_xx_block_desc_0内部的_xx_block_copy_0函数，_xx_block_copy_0函数内部会调用_Block_object_assign函数。<br>_Block_object_assign函数会自动根据_xx_block_impl_0结构体内部的“a”是什么类型的指针，对“a”对象产生强引用或者弱引用。可以理解为_Block_object_assign函数内部会对“a”进行引用计数器的操作，如果_xx_block_impl_0结构体内“a”指针是 __strong 类型，则为强引用，引用计数+1，如果_xx_block_impl_0结构体内“a”指针是 __weak 类型，则为弱引用，引用计数不变。</p>
+<h4 id="Block-object-dispose函数调用时机及作用"><a href="#Block-object-dispose函数调用时机及作用" class="headerlink" title="_Block_object_dispose函数调用时机及作用:"></a>_Block_object_dispose函数调用时机及作用:</h4><p>当block从堆中移除时就会自动调用_xx_block_desc_0中的_xx_block_dispose_0函数，_xx_block_dispose_0函数内部会调用_Block_object_dispose函数。<br>_Block_object_dispose会对“a”对象做释放操作，类似于release，也就是断开对“a”对象的引用，而“a”究竟是否被释放还是取决于“a”对象自己的引用计数。</p>
+<h4 id="block"><a href="#block" class="headerlink" title="__block"></a>__block</h4><p>下面我们来修改代码 加上关键字__block，OC：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">- (instancetype)init &#123;</span><br><span class="line"></span><br><span class="line">   self = [<span class="keyword">super</span> init];</span><br><span class="line">   <span class="keyword">if</span> (self) &#123;</span><br><span class="line">      __block NSNumber *a = @<span class="number">22</span>;</span><br><span class="line">      <span class="comment">//__block NSString *a = @"22"; 原来是NSString,但是clang会报错，暂时没找到原因。</span></span><br><span class="line">      <span class="keyword">void</span>(^test)(<span class="keyword">void</span>) = ^()&#123;</span><br><span class="line"></span><br><span class="line">          NSLog(@<span class="string">"a=%ld"</span>,a);</span><br><span class="line">      &#125;;</span><br><span class="line">      test();</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>clang之后的代码</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">//对比之前多出来的结构体，对应之前的“a”变量</span></span><br><span class="line">struct __Block_byref_a_0 &#123;</span><br><span class="line">   <span class="keyword">void</span> *__isa;                      <span class="comment">//熟悉的isa指针</span></span><br><span class="line">   __Block_byref_a_0 *__forwarding;  <span class="comment">//指向”a“地址的指针</span></span><br><span class="line">   int __flags;</span><br><span class="line">   int __size;</span><br><span class="line">   <span class="keyword">void</span> (*__Block_byref_id_object_copy)(<span class="keyword">void</span>*, <span class="keyword">void</span>*);</span><br><span class="line">   <span class="keyword">void</span> (*__Block_byref_id_object_dispose)(<span class="keyword">void</span>*);</span><br><span class="line">   NSNumber *a;                     <span class="comment">//"a"的值</span></span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">struct __test__init_block_impl_0 &#123;</span><br><span class="line">   struct __block_impl impl;</span><br><span class="line">   struct __test__init_block_desc_0* Desc;</span><br><span class="line">   __Block_byref_a_0 *a; <span class="comment">// by ref   对应“第二次clang”中的变量”a“</span></span><br><span class="line">   __test__init_block_impl_0(<span class="keyword">void</span> *fp, struct __test__init_block_desc_0 *desc, __Block_byref_a_0 *_a, int flags=<span class="number">0</span>) : a(_a-&gt;__forwarding) &#123;</span><br><span class="line">      impl.isa = &amp;_NSConcreteStackBlock;</span><br><span class="line">      impl.Flags = flags;</span><br><span class="line">      impl.FuncPtr = fp;</span><br><span class="line">      Desc = desc;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_func_0(struct __test__init_block_impl_0 *__cself) &#123;</span><br><span class="line">   __Block_byref_a_0 *a = __cself-&gt;a; <span class="comment">// bound by ref</span></span><br><span class="line">   (a-&gt;__forwarding-&gt;a) = ((NSNumber *(*)(Class, SEL, int))(<span class="keyword">void</span> *)objc_msgSend)(objc_getClass(<span class="string">"NSNumber"</span>), sel_registerName(<span class="string">"numberWithInt:"</span>), <span class="number">333</span>);</span><br><span class="line">   NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_test_b1d4ff_mi_0,(a-&gt;__forwarding-&gt;a));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//对应“第二次clang”中的copy方法</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_copy_0(struct __test__init_block_impl_0*dst, struct __test__init_block_impl_0*src) &#123;</span><br><span class="line">   _Block_object_assign((<span class="keyword">void</span>*)&amp;dst-&gt;a, (<span class="keyword">void</span>*)src-&gt;a, <span class="number">8</span><span class="comment">/*BLOCK_FIELD_IS_BYREF*/</span>);&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//对应“第二次clang”中的dispose方法</span></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> __test__init_block_dispose_0(struct __test__init_block_impl_0*src) &#123;</span><br><span class="line">   _Block_object_dispose((<span class="keyword">void</span>*)src-&gt;a, <span class="number">8</span><span class="comment">/*BLOCK_FIELD_IS_BYREF*/</span>);   </span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> struct __test__init_block_desc_0 &#123;</span><br><span class="line">   size_t reserved;</span><br><span class="line">   size_t Block_size;</span><br><span class="line">   <span class="keyword">void</span> (*copy)(struct __test__init_block_impl_0*, struct __test__init_block_impl_0*);</span><br><span class="line">   <span class="keyword">void</span> (*dispose)(struct __test__init_block_impl_0*);</span><br><span class="line">&#125; __test__init_block_desc_0_DATA = &#123; <span class="number">0</span>, sizeof(struct __test__init_block_impl_0), __test__init_block_copy_0, __test__init_block_dispose_0&#125;;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> instancetype _I_test_init(test * self, SEL _cmd) &#123;</span><br><span class="line"></span><br><span class="line">   self = ((test *(*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"test"</span>))&#125;, sel_registerName(<span class="string">"init"</span>));</span><br><span class="line">   <span class="keyword">if</span> (self) &#123;</span><br><span class="line">      </span><br><span class="line">      <span class="comment">//构造Block_byref_a_0结构体，第二参数传入的”a“的地址（对应”__forwarding“参数），最后一个参数传入”a“的值</span></span><br><span class="line">      __attribute__((__blocks__(byref))) __Block_byref_a_0 a = &#123;(<span class="keyword">void</span>*)<span class="number">0</span>,(__Block_byref_a_0 *)&amp;a, <span class="number">33554432</span>, sizeof(__Block_byref_a_0), __Block_byref_id_object_copy_131, __Block_byref_id_object_dispose_131, ((NSNumber *(*)(Class, SEL, int))(<span class="keyword">void</span> *)objc_msgSend)(objc_getClass(<span class="string">"NSNumber"</span>), sel_registerName(<span class="string">"numberWithInt:"</span>), <span class="number">22</span>)&#125;;</span><br><span class="line"></span><br><span class="line">      <span class="keyword">void</span>(*test)(<span class="keyword">void</span>) = ((<span class="keyword">void</span> (*)())&amp;__test__init_block_impl_0((<span class="keyword">void</span> *)__test__init_block_func_0, &amp;__test__init_block_desc_0_DATA, (__Block_byref_a_0 *)&amp;a, <span class="number">570425344</span>));</span><br><span class="line">      ((<span class="keyword">void</span> (*)(__block_impl *))((__block_impl *)test)-&gt;FuncPtr)((__block_impl *)test);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="keyword">return</span> self;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>加上“__block”关键字之后  </p>
+<ol>
+<li>源码中新增加了一个名为“__Block_byref_a_0”的结构体，用来保存我们要捕获并且修改的变量“a”。  </li>
+<li>“__Block_byref_a_0”结构体带有“isa”指针，变量“a”的值及地址。  </li>
+<li>同样增加的copy和dispose函数，用于“__Block_byref_a_0”结构体的内存管理。</li>
+</ol>
+<h3 id="循环引用问题"><a href="#循环引用问题" class="headerlink" title="循环引用问题"></a>循环引用问题</h3><p>1.为什么会产生循环引用？<br>答：当block内部捕获的变量类型为对象时。会增加“copy”和“dispose”来管理变量内存，当变量本身被“strong”修饰时，copy内部调用assign会再次进行强引用：引用计数+1，此时如果变量对block有强引用关系（如block为变量的属性等）便会导致循环引用。<br>2.为何加上“__weak”之后可以避免循环引用？<br>答：在copy内部调用assign时，如果此时变量的修饰类型为“weak”，则assign函数则不会进行“+1”的行为，所以不会产生循环引用。</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yfeii.github.io/2019/04/22/block/" data-id="cjvn9tudl0009z7rwbf5lclq2" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2019/05/05/autoreleasepool/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Newer</strong>
+      <div class="article-nav-title">
+        
+          autoreleasepool
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2019/04/11/at-synthesize/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">@synthesize</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/05/">May 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/04/">April 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2019/03/">March 2019</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/10/">October 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/09/">September 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2018/02/">February 2018</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/12/">December 2017</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/09/">September 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2019/05/13/runtimezong-jie/">runtime总结</a>
+          </li>
+        
+          <li>
+            <a href="/2019/05/05/autoreleasepool/">autoreleasepool</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/22/block/">block</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/11/at-synthesize/">@synthesize</a>
+          </li>
+        
+          <li>
+            <a href="/2019/04/09/self-super/">self super</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2019 yfeii<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+
+
+  </div>
+</body>
+</html>
