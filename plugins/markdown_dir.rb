@@ -1,8 +1,3 @@
-# MardowndirFilter.rb
-# Add content for each post
-# swm8023 c4fun.cn
-# 11.24.2013
-#
 require './plugins/post_filters'
 module MarkdowndirFilter
     @@ind = 0

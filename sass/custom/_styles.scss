@@ -18,7 +18,8 @@ html, body {
 footer[role=contentinfo] {
     height: 60px;
 }
-
+#markdir{background:#ebebeb;padding:10px;margin-bottom:10px;}
+#markdir p{font-size:18px;margin-bottom:3px;}
 /* print page content only no header, footer and asides, works with any page layout */
 @media print {
   body * {
@@ -37,6 +38,3 @@ footer[role=contentinfo] {
     top: 0;
   }
 }
-
-#markdir{background:#ebebeb;padding:10px;margin-bottom:10px;}
-#markdir p{font-size:18px;margin-bottom:3px;}
