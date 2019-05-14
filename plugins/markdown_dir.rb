@@ -23,7 +23,7 @@ module MarkdowndirFilter
         end
     end
     module Jekyll
-        class Markdowndir < OctopressFilters
+        class Markdowndir < Octopress::Hooks::Post
             include MarkdowndirFilter
             def post_render(post)
                 post.content = generatedir(post) if post.is_post?
