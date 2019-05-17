@@ -104,10 +104,12 @@
 <meta property="og:site_name" content="逆水行舟">
 <meta property="og:description" content="runtime阶段性总结，预计2019.05.20结束此篇">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-05-14T07:47:52.651Z">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/runtime/1.png">
+<meta property="og:updated_time" content="2019-05-17T09:44:06.077Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="runtime总结">
 <meta name="twitter:description" content="runtime阶段性总结，预计2019.05.20结束此篇">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/runtime/1.png">
 
 
 
@@ -367,12 +369,24 @@
                 
               
 
-              <time title="创建时间：2019-05-14 13:49:32 / 修改时间：15:47:52" itemprop="dateCreated datePublished" datetime="2019-05-14T13:49:32+08:00">2019-05-14</time>
+              <time title="创建时间：2019-05-14 13:49:32" itemprop="dateCreated datePublished" datetime="2019-05-14T13:49:32+08:00">2019-05-14</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-05-17 17:44:06" itemprop="dateModified" datetime="2019-05-17T17:44:06+08:00">2019-05-17</time>
               
             
           </span>
@@ -425,7 +439,16 @@
 
       
         <p>runtime阶段性总结，预计2019.05.20结束此篇<a id="more"></a></p>
-<h3 id="Class和Object基础数据结构"><a href="#Class和Object基础数据结构" class="headerlink" title="Class和Object基础数据结构"></a>Class和Object基础数据结构</h3>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>当程序开始编译，到完全运行起来以后，为其提供相关支持的代码叫做“Objective-C运行期环境”（Objective-C runtime），它提供了一些使得对象之间能够传递消息的重要函数，并且包含创建示例所用的全部逻辑，Objc Runtime使得C具有了面向对象能力，在程序运行时创建，检查，修改类、对象和它们的方法，<a href="http://www.opensource.apple.com/source/objc4/" target="_blank" rel="noopener">这里</a>可以下到苹果维护的开源代码，苹果官方的<a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjCRuntimeGuide/Introduction/Introduction.html#//apple_ref/doc/uid/TP40008048" target="_blank" rel="noopener">Runtime编程指南</a>  </p>
+<h2 id="Runtime函数"><a href="#Runtime函数" class="headerlink" title="Runtime函数"></a>Runtime函数</h2><p>Runtime系统是由一系列的函数和数据结构组成的公共接口动态共享库，在/usr/include/objc目录下可以看到头文件，可以用其中一些函数通过C语言实现objectivec中一样的功能。苹果官方文档里有详细的<a href="https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ObjCRuntimeRef/index.html" target="_blank" rel="noopener">Runtime函数文档</a>。</p>
+<h2 id="Class和Object基础数据结构"><a href="#Class和Object基础数据结构" class="headerlink" title="Class和Object基础数据结构"></a>Class和Object基础数据结构</h2><h3 id="class"><a href="#class" class="headerlink" title="class"></a>class</h3><p>objc/runtime.h中objc_class结构体的定义如下：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">struct objc_class &#123;</span><br><span class="line">   </span><br><span class="line">   <span class="comment">//isa指针指向Meta Class。后面会梳理对象 类 metaClass 的isa分别是什么。</span></span><br><span class="line">   Class _Nonnull isa  OBJC_ISA_AVAILABILITY;</span><br><span class="line">   #if !__OBJC2__</span><br><span class="line">   </span><br><span class="line">   <span class="comment">// 父类</span></span><br><span class="line">   Class _Nullable super_class   OBJC2_UNAVAILABLE;    </span><br><span class="line">   <span class="comment">// 类名</span></span><br><span class="line">   <span class="keyword">const</span> char * _Nonnull name    OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">// 类的版本信息，默认为0</span></span><br><span class="line">   long version                  OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">// 类信息，供运行期使用的一些位标识</span></span><br><span class="line">   long info                     OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">// 该类的实例变量大小</span></span><br><span class="line">   long instance_size            OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">// 该类的成员变量结构体（暂未看到证明是其结构是链表的证明，留个坑）</span></span><br><span class="line">   struct objc_ivar_list * _Nullable ivars      OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">//方法定义的结构体（链表同上）</span></span><br><span class="line">   struct objc_method_list * _Nullable * _Nullable methodLists    OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">//方法缓存，对象接到一个消息会根据isa指针查找消息对象，这时会在methodLists中遍历，如果cache了，常用的方法调用时就能够提高调用的效率。</span></span><br><span class="line">   struct objc_cache * _Nonnull cache                       OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">//协议链表（链表同上）</span></span><br><span class="line">   struct objc_protocol_list * _Nullable protocols          OBJC2_UNAVAILABLE;</span><br><span class="line">   #endif </span><br><span class="line"></span><br><span class="line">&#125; OBJC2_UNAVAILABLE;</span><br><span class="line"><span class="comment">/* Use `Class` instead of `struct objc_class *` */</span></span><br></pre></td></tr></table></figure></p>
+<h4 id="objc-ivar-list和objc-method-list的定义"><a href="#objc-ivar-list和objc-method-list的定义" class="headerlink" title="objc_ivar_list和objc_method_list的定义"></a>objc_ivar_list和objc_method_list的定义</h4><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="comment">//objc_ivar_list结构体存储objc_ivar数组列表</span></span><br><span class="line">struct objc_ivar_list &#123;</span><br><span class="line">   int ivar_count OBJC2_UNAVAILABLE;</span><br><span class="line">   #ifdef __LP64__</span><br><span class="line">   int space OBJC2_UNAVAILABLE;</span><br><span class="line">   #endif</span><br><span class="line">   <span class="comment">/* variable length structure */</span></span><br><span class="line">   struct objc_ivar ivar_list[<span class="number">1</span>] OBJC2_UNAVAILABLE;</span><br><span class="line">&#125; OBJC2_UNAVAILABLE;</span><br><span class="line"></span><br><span class="line"><span class="comment">//objc_method_list结构体存储着objc_method的数组列表</span></span><br><span class="line">struct objc_method_list &#123;</span><br><span class="line">   struct objc_method_list *obsolete OBJC2_UNAVAILABLE;</span><br><span class="line">   int method_count OBJC2_UNAVAILABLE;</span><br><span class="line">   #ifdef __LP64__</span><br><span class="line">   int space OBJC2_UNAVAILABLE;</span><br><span class="line">   #endif</span><br><span class="line">   <span class="comment">/* variable length structure */</span></span><br><span class="line">   struct objc_method method_list[<span class="number">1</span>] OBJC2_UNAVAILABLE;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>当类里面既有实例方法又有类方法时<code>objc_method_list</code>或出现两个此结构体，分别对象实例方法和类方法。</p>
+<h4 id="objc-cache"><a href="#objc-cache" class="headerlink" title="objc_cache"></a>objc_cache</h4><p><code>objc_class</code>结构体中的cache字段用于缓存调用过的method。由于消息转发的机制所以需要缓存调用过的方法来提高执行效率<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">struct objc_cache &#123;</span><br><span class="line">   <span class="comment">//指定分配缓存bucket的总数。runtime使用这个字段确定线性查找数组的索引位置</span></span><br><span class="line">   unsigned int mask <span class="comment">/* total = mask + 1 */</span> OBJC2_UNAVAILABLE; </span><br><span class="line">   <span class="comment">//实际占用缓存bucket总数</span></span><br><span class="line">   unsigned int occupied OBJC2_UNAVAILABLE;</span><br><span class="line">   <span class="comment">//指向Method数据结构指针的数组，这个数组的总数不能超过mask+1，但是指针是可能为空的，这就表示缓存bucket没有被占用，数组会随着时间增长。</span></span><br><span class="line">   Method buckets[<span class="number">1</span>] OBJC2_UNAVAILABLE; </span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<h3 id="objc-object与id"><a href="#objc-object与id" class="headerlink" title="objc_object与id"></a>objc_object与id</h3><p><code>objc_object</code>是一个类的实例结构体，<code>objc/objc.h</code>中<code>objc_object</code>是一个类的实例结构体定义如下：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">struct objc_object &#123;</span><br><span class="line">   Class isa OBJC_ISA_AVAILABILITY;</span><br><span class="line">&#125;;</span><br><span class="line">typedef struct objc_object *id;</span><br></pre></td></tr></table></figure></p>
+<p>向object发送消息时，<code>runtime</code>库会根据object的<code>isa</code>指针找到这个实例object所属于的类，然后在类的方法列表以及父类方法列表寻找对应的方法运行。<code>id</code>是一个<code>objc_object</code>结构类型的指针，这个类型的对象能够转换成任何一种对象。</p>
+<h3 id="Meta-Class"><a href="#Meta-Class" class="headerlink" title="Meta Class"></a>Meta Class</h3><p>meta class是一个类对象的类，当向对象发消息，runtime会在这个对象所属类方法列表中查找发送消息对应的方法，但当向类发送消息时，runtime就会在这个类的meta class方法列表里查找。所有的meta class，包括Root class，Superclass，Subclass的isa都指向Root class的meta class，这样能够形成一个闭环。如图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/runtime/1.png" alt="图片"></p>
+
       
     </div>
 
@@ -616,7 +639,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Class和Object基础数据结构"><span class="nav-number">1.</span> <span class="nav-text">Class和Object基础数据结构</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#前言"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Runtime函数"><span class="nav-number">2.</span> <span class="nav-text">Runtime函数</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Class和Object基础数据结构"><span class="nav-number">3.</span> <span class="nav-text">Class和Object基础数据结构</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#class"><span class="nav-number">3.1.</span> <span class="nav-text">class</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#objc-ivar-list和objc-method-list的定义"><span class="nav-number">3.1.1.</span> <span class="nav-text">objc_ivar_list和objc_method_list的定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#objc-cache"><span class="nav-number">3.1.2.</span> <span class="nav-text">objc_cache</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#objc-object与id"><span class="nav-number">3.2.</span> <span class="nav-text">objc_object与id</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Meta-Class"><span class="nav-number">3.3.</span> <span class="nav-text">Meta Class</span></a></li></ol></li></ol></div>
             
 
           </div>
