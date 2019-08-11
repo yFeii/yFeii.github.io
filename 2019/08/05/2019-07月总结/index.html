@@ -106,7 +106,7 @@
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://uploads.disquscdn.com/images/bd7923fcef694929dc6813d46f01b50b9783cc41d658bc245133902838765f6c.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/201907review/23_56_01__08_05_2019.jpg">
-<meta property="og:updated_time" content="2019-08-08T11:03:19.957Z">
+<meta property="og:updated_time" content="2019-08-08T11:08:23.670Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="2019.07月总结">
 <meta name="twitter:description" content="这是打算写月总结的第一篇文章，真实日期为2019.07.16~2019.07.31，本文的目的在于从多个不同的纬度在单月时间内来复盘、沉淀自已">
@@ -387,7 +387,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-08-08 19:03:19" itemprop="dateModified" datetime="2019-08-08T19:03:19+08:00">2019-08-08</time>
+                <time title="修改时间：2019-08-08 19:08:23" itemprop="dateModified" datetime="2019-08-08T19:08:23+08:00">2019-08-08</time>
               
             
           </span>
@@ -464,10 +464,11 @@
 <h3 id="CGContextRef-path-描边的规则"><a href="#CGContextRef-path-描边的规则" class="headerlink" title="CGContextRef path 描边的规则"></a>CGContextRef path 描边的规则</h3><p>Stroke width 的规则为已path为中心上下各一半，比如Stroke width 为10，则在path上为5 ，下为5。如下图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/201907review/23_56_01__08_05_2019.jpg" alt="图片"><br>黑色为path，黄色为stroke的填充规则</p>
 <h3 id="UISearchController"><a href="#UISearchController" class="headerlink" title="UISearchController"></a>UISearchController</h3><p>IQKeyboardManager 与其冲突 解决方案待定</p>
 <h3 id="LLDB-调试"><a href="#LLDB-调试" class="headerlink" title="LLDB 调试"></a>LLDB 调试</h3><p><a href="https://github.com/xitu/gold-miner/blob/master/TODO1/xcode-and-lldb-advanced-debugging-tutorial-part-3.md" target="_blank" rel="noopener">参考此处</a></p>
-<h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><h3 id="perfromSelector-与-NSMethodSignature"><a href="#perfromSelector-与-NSMethodSignature" class="headerlink" title="perfromSelector 与 NSMethodSignature"></a>perfromSelector 与 NSMethodSignature</h3><p>二者皆可以调用未声明的方法<br><code>perfromSelector其流程与MsgSend一致<br><code>NSMethodSignature</code> 的实现流程为<code>___methodDescriptionForSelector</code><a href="https://devyang.space/2019/05/14/runtime%E6%80%BB%E7%BB%93/#more" target="_blank" rel="noopener">具体细节</a></code></p>
+<h2 id="基础知识"><a href="#基础知识" class="headerlink" title="基础知识"></a>基础知识</h2><h3 id="perfromSelector-与-NSMethodSignature"><a href="#perfromSelector-与-NSMethodSignature" class="headerlink" title="perfromSelector 与 NSMethodSignature"></a>perfromSelector 与 NSMethodSignature</h3><p>二者皆可以调用未声明的方法<br><code>perfromSelector其流程与MsgSend一致<br><code>NSMethodSignature</code> 的实现流程为<code>___methodDescriptionForSelector</code><a href="https://devyang.space/2019/08/08/NSMethodSignature/" target="_blank" rel="noopener">具体细节</a></code></p>
 <h3 id="UIControl-target-addTarget"><a href="#UIControl-target-addTarget" class="headerlink" title="UIControl  target(addTarget)"></a>UIControl  target(addTarget)</h3><h4 id="为什么-addTarget-不会引起循环引用"><a href="#为什么-addTarget-不会引起循环引用" class="headerlink" title="为什么 addTarget 不会引起循环引用"></a>为什么 addTarget 不会引起循环引用</h4><p>targetActions数组中 <code>UIControlTargetAction</code>的结构<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">@interface UIControlTargetAction : NSObject &#123;</span><br><span class="line">  SEL _action;</span><br><span class="line">  BOOL _cancelled;</span><br><span class="line">  unsigned int _eventMask;</span><br><span class="line">  id _target;  <span class="comment">//weak</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
 <p>另外，如果我们以同一组target-action和event多次调用addTarget:action:forControlEvents:方法，在_targetActions中并不会重复添加UIControlTargetAction对象。但如果target相同，action不同的话是会重新添加的</p>
-<h3 id="KVO-1"><a href="#KVO-1" class="headerlink" title="KVO"></a>KVO</h3>
+<h3 id="KVO-1"><a href="#KVO-1" class="headerlink" title="KVO"></a>KVO</h3><p><a href="https://devyang.space/2019/08/08/KVO/" target="_blank" rel="noopener">在这里</a></p>
+
       
     </div>
 
