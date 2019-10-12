@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
-<meta name="keywords" content="iOS">
+  <meta name="description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
+<meta name="keywords" content="iOS,程序员的自我修养">
 <meta property="og:type" content="article">
-<meta property="og:title" content="更新了ruby之后 - -">
-<meta property="og:url" content="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/index.html">
+<meta property="og:title" content="Mach-O详解">
+<meta property="og:url" content="http://yfeii.github.io/2019/10/08/Mach-O详解/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta property="og:description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-06-18T08:33:13.569Z">
+<meta property="og:updated_time" content="2019-10-12T14:26:50.883Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="更新了ruby之后 - -">
-<meta name="twitter:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta name="twitter:title" content="Mach-O详解">
+<meta name="twitter:description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
 
 
 
@@ -115,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+  <link rel="canonical" href="http://yfeii.github.io/2019/10/08/Mach-O详解/">
 
 
 
@@ -125,7 +125,7 @@
   };
 </script>
 
-  <title>更新了ruby之后 - - | 逆水行舟</title>
+  <title>Mach-O详解 | 逆水行舟</title>
   
 
 
@@ -324,7 +324,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/08/Mach-O详解/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="yfeii">
@@ -341,7 +341,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">更新了ruby之后 - -
+          <h1 class="post-title" itemprop="name headline">Mach-O详解
 
               
             
@@ -367,7 +367,7 @@
                 
               
 
-              <time title="创建时间：2018-02-28 14:28:48" itemprop="dateCreated datePublished" datetime="2018-02-28T14:28:48+08:00">2018-02-28</time>
+              <time title="创建时间：2019-10-08 14:50:28" itemprop="dateCreated datePublished" datetime="2019-10-08T14:50:28+08:00">2019-10-08</time>
             
 
             
@@ -384,7 +384,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-06-18 16:33:13" itemprop="dateModified" datetime="2019-06-18T16:33:13+08:00">2019-06-18</time>
+                <time title="修改时间：2019-10-12 22:26:50" itemprop="dateModified" datetime="2019-10-12T22:26:50+08:00">2019-10-12</time>
               
             
           </span>
@@ -401,7 +401,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/采坑/" itemprop="url" rel="index"><span itemprop="name">采坑</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/编译与链接/" itemprop="url" rel="index"><span itemprop="name">编译与链接</span></a></span>
 
                 
                 
@@ -436,20 +436,13 @@
       
 
       
-        <p>偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby.. <a id="more"></a></p>
-<p>年前写了一个<a href="https://github.com/yFeii/yFeiiNetwork" target="_blank" rel="noopener">网络请求库</a>，发布到Cocoapods一切正常却发现 pod search 不到，通过如下方法解决<a href="https://www.jianshu.com/p/b5e5cd053464" target="_blank" rel="noopener">原文</a></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rm ~<span class="regexp">/Library/</span>Caches/CocoaPods/search_index.json</span><br></pre></td></tr></table></figure>
-<p>私有库建好之后一起准备就绪 开始写demo，执行 pod update, duang~ 抛错，尝试各种办法无果，最后只能更新ruby，更新openssl代替系统老板本的openssl，在安装openssl时候出现以下log</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install openssl</span><br><span class="line">==&gt; Downloading https:<span class="comment">//homebrew.bintray.com/bottles/openssl-1.0.2h_1.el_capitan.bottle.tar.gz</span></span><br><span class="line">Already downloaded: <span class="regexp">/Users/</span>administrator/Library/Caches/Homebrew/openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Pouring openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Caveats</span><br><span class="line">A CA file has been bootstrapped using certificates <span class="keyword">from</span> the system</span><br><span class="line">keychain. To add additional certificates, place .pem files <span class="keyword">in</span></span><br><span class="line">/usr/local/etc/openssl/certs</span><br><span class="line"></span><br><span class="line">and run</span><br><span class="line">/usr/local/opt/openssl/bin/c_rehash</span><br><span class="line"></span><br><span class="line">This formula is keg-only, which means it was not symlinked into /usr/local.</span><br><span class="line"></span><br><span class="line">Apple has deprecated use <span class="keyword">of</span> OpenSSL <span class="keyword">in</span> favor <span class="keyword">of</span> its own TLS and crypto libraries</span><br><span class="line"></span><br><span class="line">Generally there are no consequences <span class="keyword">of</span> <span class="keyword">this</span> <span class="keyword">for</span> you. If you build your</span><br><span class="line">own software and it requires <span class="keyword">this</span> formula, you<span class="string">'ll need to add to your</span></span><br><span class="line"><span class="string">build variables:</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">LDFLAGS:  -L/usr/local/opt/openssl/lib</span></span><br><span class="line"><span class="string">CPPFLAGS: -I/usr/local/opt/openssl/include</span></span><br></pre></td></tr></table></figure>
-<p>可在这两处(<a href="https://www.cnblogs.com/afluy/p/5462952.html" target="_blank" rel="noopener">1</a>.<a href="http://blog.csdn.net/jiamian_/article/details/55098125" target="_blank" rel="noopener">2</a>)找到答案<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;pod setup</span><br><span class="line"> cannot load such file -- openssl (LoadError)</span><br></pre></td></tr></table></figure></p>
-<p>可按<a href="https://stackoverflow.com/questions/14845481/cannot-load-such-file-openssl-loaderror" target="_blank" rel="noopener">参考资料</a>处解决<br><br>总结<br></p>
-<ul>
-<li>涉及操作 /usr/bin 类似目录时，重启系统，当启动的时候我们同时按下cmd+r进入Recovery模式，在終端中输入csrutil disable，后执行的操作可加上 sudo如：mv /xxx/xxx -&gt; sudo mv /xxx/xxx</li>
-<li>在做ln -s 等目录操作时需注意 目录中的版本号对应到你当前的版本，不要按照查到的资料copy</li>
-<li>看stackoverflow的评论和github的issue 会有意外收获</li>
-<li>仔细看终端的安装提示，很多时候抛错都会提示对应操作</li>
-<li>还是吃了英语不好的亏啊</li>
-</ul>
+        <p>本文将会结合<a href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/1-Articles/executing_files.html#//apple_ref/doc/uid/TP40001829-SW1" target="_blank" rel="noopener">苹果官方文档</a>，来详细解读<code>Mach-O</code><a id="more"></a><br>本文会说明<code>Mach-O</code>的定义，及设计原理，其中与链接相关的部分原理不会在本文说明，后面会有专门的链接文章，结合demo操作和<code>Mach-O</code>来详细说明。<br>那么通过本文可以收获什么？</p>
+<h2 id="带着问题学习"><a href="#带着问题学习" class="headerlink" title="带着问题学习"></a>带着问题学习</h2><ol>
+<li>Mach-O是什么（定义）？</li>
+<li>Mach-O的内容是什么？</li>
+<li>为什么要有“段”？<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><code>Mach-O</code>又称<code>Mach object</code>，是不同运行时规则下的 可执行文件的文件类型。</li>
+</ol>
+<h3 id="文件类型"><a href="#文件类型" class="headerlink" title="文件类型"></a>文件类型</h3><p>MH_OBJECT            0x1        目标文件<br>MH_EXECUTE    0x2        可执行文件<br>MH_DYLIB            0x6        动态库<br>MH_DYLINKER    0x7     动态连接器<br>MH_DSYM        0xa     存储二进制文件符号信息，用于Debug分析</p>
 
       
     </div>
@@ -475,6 +468,8 @@
           
             <a href="/tags/iOS/" rel="tag"># iOS</a>
           
+            <a href="/tags/程序员的自我修养/" rel="tag"># 程序员的自我修养</a>
+          
         </div>
       
 
@@ -486,8 +481,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/06/radiuscollectionview/" rel="next" title="radiusCollectionView">
-                <i class="fa fa-chevron-left"></i> radiusCollectionView
+              <a href="/2019/09/07/重拾runtime/" rel="next" title="重拾runtime">
+                <i class="fa fa-chevron-left"></i> 重拾runtime
               </a>
             
           </div>
@@ -496,8 +491,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2018/09/15/oc->js/" rel="prev" title="OC和JS 交互">
-                OC和JS 交互 <i class="fa fa-chevron-right"></i>
+              <a href="/2019/10/11/ARTS-01-dyld/" rel="prev" title="ARTS(01~dyld)">
+                ARTS(01~dyld) <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -542,8 +537,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <div class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -643,6 +647,23 @@
         </div>
       </div>
 
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#带着问题学习"><span class="nav-number">1.</span> <span class="nav-text">带着问题学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#定义"><span class="nav-number">2.</span> <span class="nav-text">定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文件类型"><span class="nav-number">2.1.</span> <span class="nav-text">文件类型</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
       
 
       

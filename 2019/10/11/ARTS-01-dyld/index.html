@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
-<meta name="keywords" content="iOS">
+  <meta name="description" content="ARTS第一周，内容如下包括：算法，Dynamic Linking On OS X Mike Ash 写的这篇关于 dyld 的博客, 关于Clang相关的命令，Mach-O格式">
+<meta name="keywords" content="ARTS">
 <meta property="og:type" content="article">
-<meta property="og:title" content="更新了ruby之后 - -">
-<meta property="og:url" content="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/index.html">
+<meta property="og:title" content="ARTS(01~dyld)">
+<meta property="og:url" content="http://yfeii.github.io/2019/10/11/ARTS-01-dyld/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta property="og:description" content="ARTS第一周，内容如下包括：算法，Dynamic Linking On OS X Mike Ash 写的这篇关于 dyld 的博客, 关于Clang相关的命令，Mach-O格式">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-06-18T08:33:13.569Z">
+<meta property="og:updated_time" content="2019-10-12T14:52:25.640Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="更新了ruby之后 - -">
-<meta name="twitter:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta name="twitter:title" content="ARTS(01~dyld)">
+<meta name="twitter:description" content="ARTS第一周，内容如下包括：算法，Dynamic Linking On OS X Mike Ash 写的这篇关于 dyld 的博客, 关于Clang相关的命令，Mach-O格式">
 
 
 
@@ -115,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+  <link rel="canonical" href="http://yfeii.github.io/2019/10/11/ARTS-01-dyld/">
 
 
 
@@ -125,7 +125,7 @@
   };
 </script>
 
-  <title>更新了ruby之后 - - | 逆水行舟</title>
+  <title>ARTS(01~dyld) | 逆水行舟</title>
   
 
 
@@ -324,7 +324,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/11/ARTS-01-dyld/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="yfeii">
@@ -341,7 +341,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">更新了ruby之后 - -
+          <h1 class="post-title" itemprop="name headline">ARTS(01~dyld)
 
               
             
@@ -367,7 +367,7 @@
                 
               
 
-              <time title="创建时间：2018-02-28 14:28:48" itemprop="dateCreated datePublished" datetime="2018-02-28T14:28:48+08:00">2018-02-28</time>
+              <time title="创建时间：2019-10-11 19:57:49" itemprop="dateCreated datePublished" datetime="2019-10-11T19:57:49+08:00">2019-10-11</time>
             
 
             
@@ -384,7 +384,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2019-06-18 16:33:13" itemprop="dateModified" datetime="2019-06-18T16:33:13+08:00">2019-06-18</time>
+                <time title="修改时间：2019-10-12 22:52:25" itemprop="dateModified" datetime="2019-10-12T22:52:25+08:00">2019-10-12</time>
               
             
           </span>
@@ -401,7 +401,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/采坑/" itemprop="url" rel="index"><span itemprop="name">采坑</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/持续学习/" itemprop="url" rel="index"><span itemprop="name">持续学习</span></a></span>
 
                 
                 
@@ -436,20 +436,37 @@
       
 
       
-        <p>偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby.. <a id="more"></a></p>
-<p>年前写了一个<a href="https://github.com/yFeii/yFeiiNetwork" target="_blank" rel="noopener">网络请求库</a>，发布到Cocoapods一切正常却发现 pod search 不到，通过如下方法解决<a href="https://www.jianshu.com/p/b5e5cd053464" target="_blank" rel="noopener">原文</a></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rm ~<span class="regexp">/Library/</span>Caches/CocoaPods/search_index.json</span><br></pre></td></tr></table></figure>
-<p>私有库建好之后一起准备就绪 开始写demo，执行 pod update, duang~ 抛错，尝试各种办法无果，最后只能更新ruby，更新openssl代替系统老板本的openssl，在安装openssl时候出现以下log</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install openssl</span><br><span class="line">==&gt; Downloading https:<span class="comment">//homebrew.bintray.com/bottles/openssl-1.0.2h_1.el_capitan.bottle.tar.gz</span></span><br><span class="line">Already downloaded: <span class="regexp">/Users/</span>administrator/Library/Caches/Homebrew/openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Pouring openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Caveats</span><br><span class="line">A CA file has been bootstrapped using certificates <span class="keyword">from</span> the system</span><br><span class="line">keychain. To add additional certificates, place .pem files <span class="keyword">in</span></span><br><span class="line">/usr/local/etc/openssl/certs</span><br><span class="line"></span><br><span class="line">and run</span><br><span class="line">/usr/local/opt/openssl/bin/c_rehash</span><br><span class="line"></span><br><span class="line">This formula is keg-only, which means it was not symlinked into /usr/local.</span><br><span class="line"></span><br><span class="line">Apple has deprecated use <span class="keyword">of</span> OpenSSL <span class="keyword">in</span> favor <span class="keyword">of</span> its own TLS and crypto libraries</span><br><span class="line"></span><br><span class="line">Generally there are no consequences <span class="keyword">of</span> <span class="keyword">this</span> <span class="keyword">for</span> you. If you build your</span><br><span class="line">own software and it requires <span class="keyword">this</span> formula, you<span class="string">'ll need to add to your</span></span><br><span class="line"><span class="string">build variables:</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">LDFLAGS:  -L/usr/local/opt/openssl/lib</span></span><br><span class="line"><span class="string">CPPFLAGS: -I/usr/local/opt/openssl/include</span></span><br></pre></td></tr></table></figure>
-<p>可在这两处(<a href="https://www.cnblogs.com/afluy/p/5462952.html" target="_blank" rel="noopener">1</a>.<a href="http://blog.csdn.net/jiamian_/article/details/55098125" target="_blank" rel="noopener">2</a>)找到答案<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;pod setup</span><br><span class="line"> cannot load such file -- openssl (LoadError)</span><br></pre></td></tr></table></figure></p>
-<p>可按<a href="https://stackoverflow.com/questions/14845481/cannot-load-such-file-openssl-loaderror" target="_blank" rel="noopener">参考资料</a>处解决<br><br>总结<br></p>
-<ul>
-<li>涉及操作 /usr/bin 类似目录时，重启系统，当启动的时候我们同时按下cmd+r进入Recovery模式，在終端中输入csrutil disable，后执行的操作可加上 sudo如：mv /xxx/xxx -&gt; sudo mv /xxx/xxx</li>
-<li>在做ln -s 等目录操作时需注意 目录中的版本号对应到你当前的版本，不要按照查到的资料copy</li>
-<li>看stackoverflow的评论和github的issue 会有意外收获</li>
-<li>仔细看终端的安装提示，很多时候抛错都会提示对应操作</li>
-<li>还是吃了英语不好的亏啊</li>
-</ul>
+        <p>ARTS第一周，内容如下包括：算法，<a href="https://www.mikeash.com/pyblog/friday-qa-2012-11-09-dyld-dynamic-linking-on-os-x.html" target="_blank" rel="noopener">Dynamic Linking On OS X</a> Mike Ash 写的这篇关于 dyld 的博客, 关于Clang相关的命令，Mach-O格式<a id="more"></a></p>
+<h2 id="Algorithm"><a href="#Algorithm" class="headerlink" title="Algorithm"></a>Algorithm</h2><p><a href="https://leetcode.com/problems/search-in-a-binary-search-tree/" target="_blank" rel="noopener">Search in a Binary Search Tree</a></p>
+<h2 id="Review"><a href="#Review" class="headerlink" title="Review"></a>Review</h2><p><a href="https://www.mikeash.com/pyblog/friday-qa-2012-11-09-dyld-dynamic-linking-on-os-x.html" target="_blank" rel="noopener">Dynamic Linking On OS X</a> Mike Ash 写的这篇关于 dyld 的博客</p>
+<h3 id="Static-linking（ld）"><a href="#Static-linking（ld）" class="headerlink" title="Static linking（ld）"></a>Static linking（ld）</h3><p>发生在编译之后，源码转化为机器语言，所有的目标文件（Object File）被链接到一个二进制文件时<br>静态链接重要的原因：静态链接把符号引用转变成了间接符号查找，后续的dyld才能使用</p>
+<h4 id="ld-has"><a href="#ld-has" class="headerlink" title="ld has"></a>ld has</h4><ol>
+<li>相似段合并（空间地址分配）</li>
+<li>替换所有命令（重定位）</li>
+<li>替换符号对应的真实地址（符号解析）<br>经过静态链接之后，会生成完整的可执行文件。<h3 id="dyld"><a href="#dyld" class="headerlink" title="dyld"></a>dyld</h3></li>
+<li>通过系统内核，初始化一个简单的原始堆栈来运行自身（app）</li>
+<li>通过递归和缓存，加载所有可执行文件链接的动态库，到进程内存空间中</li>
+<li>将“non-lazy symbols(非惰性符号)” 链接到可执行文件内，并且为设置lazy表</li>
+<li>Runs static initializers for the executable</li>
+<li>找到可执行文件的 main 函数，准备参数并调用</li>
+<li>在执行期间，通过绑定符号处理对 lazily-bound 符号存根的调用提供 runtime 动态加载服务（通过 dl*() 这个 API ），并为gdb和其它调试器提供钩子以获得关键信息</li>
+<li>程序main函数 return 后执行 static terminator</li>
+<li>某些场景下 main 函数结束后调 libSystem 的 _exit 函数</li>
+</ol>
+<h4 id="Bootstrap"><a href="#Bootstrap" class="headerlink" title="Bootstrap"></a>Bootstrap</h4><p>当可执行文件 执行 <code>LC_LOAD_DYLINKER</code>这个命令时，<code>__dyld_start</code>将会被调用</p>
+<h4 id="Loading"><a href="#Loading" class="headerlink" title="Loading"></a>Loading</h4><p>把二进制文件映射到内存中，解析 <code>mach-o headers</code>，<code>LC_LOAD_DYLIB</code> 会返会 二进制文件的绝对路径，当包含（@executable_path，@loader_path，@rpath）会有相应的特殊处理</p>
+<h4 id="Linking"><a href="#Linking" class="headerlink" title="Linking"></a>Linking</h4><p><code>lazy  symbols</code>的绑定将推迟到可执行文件首次调用该符号时<br><code>non-lazy  symbols</code>的绑定将在其包含库加载后立即绑定。<br>二者实际的绑定过程是相同的； 唯一的区别在于该过程的触发方式。</p>
+<h4 id="Static-initializers-static-terminators-and-runtime-services"><a href="#Static-initializers-static-terminators-and-runtime-services" class="headerlink" title="Static initializers, static terminators, and runtime services"></a>Static initializers, static terminators, and runtime services</h4><p>余下的便是一些环境的初始化（C ++对象的构造函数和Objective-C类的+ load方法），及返回main的地址，当app退出时同样由dyld返回终止符号。</p>
+<h2 id="Tip"><a href="#Tip" class="headerlink" title="Tip"></a>Tip</h2><p>一些在学习编译需要知道的命令行及工具集<br>命令：</p>
+<ol>
+<li>clang，这个都知道吧😸</li>
+<li>nm，用来显示一个程序包的符号表, 默认会显示入口地址, 符号类型, 符号名</li>
+<li>otool，针对目标文件的展示工具，用来发现应用中使用到了哪些系统库，调用了其中哪些方法，使用了库中哪些对象及属性</li>
+<li>gobjdump，查看目标文件或者可执行的目标文件的构成的gcc工具。<br>工具：</li>
+<li>MachOView</li>
+<li>hopper</li>
+</ol>
+<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://www.jianshu.com/p/a5ca26d296ba" target="_blank" rel="noopener">苹果机器学习工具</a></p>
 
       
     </div>
@@ -473,7 +490,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/iOS/" rel="tag"># iOS</a>
+            <a href="/tags/ARTS/" rel="tag"># ARTS</a>
           
         </div>
       
@@ -486,8 +503,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/06/radiuscollectionview/" rel="next" title="radiusCollectionView">
-                <i class="fa fa-chevron-left"></i> radiusCollectionView
+              <a href="/2019/10/08/Mach-O详解/" rel="next" title="Mach-O详解">
+                <i class="fa fa-chevron-left"></i> Mach-O详解
               </a>
             
           </div>
@@ -495,10 +512,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/09/15/oc->js/" rel="prev" title="OC和JS 交互">
-                OC和JS 交互 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -542,8 +555,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <div class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -643,6 +665,23 @@
         </div>
       </div>
 
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Algorithm"><span class="nav-number">1.</span> <span class="nav-text">Algorithm</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Review"><span class="nav-number">2.</span> <span class="nav-text">Review</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Static-linking（ld）"><span class="nav-number">2.1.</span> <span class="nav-text">Static linking（ld）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#ld-has"><span class="nav-number">2.1.1.</span> <span class="nav-text">ld has</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dyld"><span class="nav-number">2.2.</span> <span class="nav-text">dyld</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Bootstrap"><span class="nav-number">2.2.1.</span> <span class="nav-text">Bootstrap</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Loading"><span class="nav-number">2.2.2.</span> <span class="nav-text">Loading</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Linking"><span class="nav-number">2.2.3.</span> <span class="nav-text">Linking</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Static-initializers-static-terminators-and-runtime-services"><span class="nav-number">2.2.4.</span> <span class="nav-text">Static initializers, static terminators, and runtime services</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tip"><span class="nav-number">3.</span> <span class="nav-text">Tip</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Share"><span class="nav-number">4.</span> <span class="nav-text">Share</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
       
 
       
