@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
-<meta name="keywords" content="iOS">
+  <meta name="description" content="ARTS第二周，内容如下包括：算法，objc_msgSend’s New Prototype , 关于Clang相关的命令，Mach-O格式">
+<meta name="keywords" content="ARTS">
 <meta property="og:type" content="article">
-<meta property="og:title" content="更新了ruby之后 - -">
-<meta property="og:url" content="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/index.html">
+<meta property="og:title" content="ARTS(02~msg)">
+<meta property="og:url" content="http://yfeii.github.io/2019/10/20/ARTS-02-msg/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta property="og:description" content="ARTS第二周，内容如下包括：算法，objc_msgSend’s New Prototype , 关于Clang相关的命令，Mach-O格式">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-06-18T08:33:13.569Z">
+<meta property="og:updated_time" content="2019-10-20T14:36:46.173Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="更新了ruby之后 - -">
-<meta name="twitter:description" content="偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby..">
+<meta name="twitter:title" content="ARTS(02~msg)">
+<meta name="twitter:description" content="ARTS第二周，内容如下包括：算法，objc_msgSend’s New Prototype , 关于Clang相关的命令，Mach-O格式">
 
 
 
@@ -115,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+  <link rel="canonical" href="http://yfeii.github.io/2019/10/20/ARTS-02-msg/">
 
 
 
@@ -125,7 +125,7 @@
   };
 </script>
 
-  <title>更新了ruby之后 - - | 逆水行舟</title>
+  <title>ARTS(02~msg) | 逆水行舟</title>
   
 
 
@@ -324,7 +324,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2018/02/28/geng-xin-liao-rubyzhi-hou/">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/20/ARTS-02-msg/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="yfeii">
@@ -341,7 +341,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">更新了ruby之后 - -
+          <h1 class="post-title" itemprop="name headline">ARTS(02~msg)
 
               
             
@@ -367,24 +367,12 @@
                 
               
 
-              <time title="创建时间：2018-02-28 14:28:48" itemprop="dateCreated datePublished" datetime="2018-02-28T14:28:48+08:00">2018-02-28</time>
+              <time title="创建时间：2019-10-20 21:34:05 / 修改时间：22:36:46" itemprop="dateCreated datePublished" datetime="2019-10-20T21:34:05+08:00">2019-10-20</time>
             
 
             
               
 
-              
-                
-                <span class="post-meta-divider">|</span>
-                
-
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                
-                  <span class="post-meta-item-text">更新于</span>
-                
-                <time title="修改时间：2019-06-18 16:33:13" itemprop="dateModified" datetime="2019-06-18T16:33:13+08:00">2019-06-18</time>
               
             
           </span>
@@ -401,7 +389,7 @@
                 <span class="post-meta-item-text">分类于</span>
               
               
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/采坑/" itemprop="url" rel="index"><span itemprop="name">采坑</span></a></span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/持续学习/" itemprop="url" rel="index"><span itemprop="name">持续学习</span></a></span>
 
                 
                 
@@ -436,20 +424,17 @@
       
 
       
-        <p>偷了一个网络请求库，在pod update的时候发现抛错，试了很多办法最后无奈选择升级ruby.. <a id="more"></a></p>
-<p>年前写了一个<a href="https://github.com/yFeii/yFeiiNetwork" target="_blank" rel="noopener">网络请求库</a>，发布到Cocoapods一切正常却发现 pod search 不到，通过如下方法解决<a href="https://www.jianshu.com/p/b5e5cd053464" target="_blank" rel="noopener">原文</a></p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rm ~<span class="regexp">/Library/</span>Caches/CocoaPods/search_index.json</span><br></pre></td></tr></table></figure>
-<p>私有库建好之后一起准备就绪 开始写demo，执行 pod update, duang~ 抛错，尝试各种办法无果，最后只能更新ruby，更新openssl代替系统老板本的openssl，在安装openssl时候出现以下log</p>
-<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">&gt; brew install openssl</span><br><span class="line">==&gt; Downloading https:<span class="comment">//homebrew.bintray.com/bottles/openssl-1.0.2h_1.el_capitan.bottle.tar.gz</span></span><br><span class="line">Already downloaded: <span class="regexp">/Users/</span>administrator/Library/Caches/Homebrew/openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Pouring openssl<span class="number">-1.0</span><span class="number">.2</span>h_1.el_capitan.bottle.tar.gz</span><br><span class="line">==&gt; Caveats</span><br><span class="line">A CA file has been bootstrapped using certificates <span class="keyword">from</span> the system</span><br><span class="line">keychain. To add additional certificates, place .pem files <span class="keyword">in</span></span><br><span class="line">/usr/local/etc/openssl/certs</span><br><span class="line"></span><br><span class="line">and run</span><br><span class="line">/usr/local/opt/openssl/bin/c_rehash</span><br><span class="line"></span><br><span class="line">This formula is keg-only, which means it was not symlinked into /usr/local.</span><br><span class="line"></span><br><span class="line">Apple has deprecated use <span class="keyword">of</span> OpenSSL <span class="keyword">in</span> favor <span class="keyword">of</span> its own TLS and crypto libraries</span><br><span class="line"></span><br><span class="line">Generally there are no consequences <span class="keyword">of</span> <span class="keyword">this</span> <span class="keyword">for</span> you. If you build your</span><br><span class="line">own software and it requires <span class="keyword">this</span> formula, you<span class="string">'ll need to add to your</span></span><br><span class="line"><span class="string">build variables:</span></span><br><span class="line"><span class="string"></span></span><br><span class="line"><span class="string">LDFLAGS:  -L/usr/local/opt/openssl/lib</span></span><br><span class="line"><span class="string">CPPFLAGS: -I/usr/local/opt/openssl/include</span></span><br></pre></td></tr></table></figure>
-<p>可在这两处(<a href="https://www.cnblogs.com/afluy/p/5462952.html" target="_blank" rel="noopener">1</a>.<a href="http://blog.csdn.net/jiamian_/article/details/55098125" target="_blank" rel="noopener">2</a>)找到答案<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">&gt;pod setup</span><br><span class="line"> cannot load such file -- openssl (LoadError)</span><br></pre></td></tr></table></figure></p>
-<p>可按<a href="https://stackoverflow.com/questions/14845481/cannot-load-such-file-openssl-loaderror" target="_blank" rel="noopener">参考资料</a>处解决<br><br>总结<br></p>
-<ul>
-<li>涉及操作 /usr/bin 类似目录时，重启系统，当启动的时候我们同时按下cmd+r进入Recovery模式，在終端中输入csrutil disable，后执行的操作可加上 sudo如：mv /xxx/xxx -&gt; sudo mv /xxx/xxx</li>
-<li>在做ln -s 等目录操作时需注意 目录中的版本号对应到你当前的版本，不要按照查到的资料copy</li>
-<li>看stackoverflow的评论和github的issue 会有意外收获</li>
-<li>仔细看终端的安装提示，很多时候抛错都会提示对应操作</li>
-<li>还是吃了英语不好的亏啊</li>
-</ul>
+        <p>ARTS第二周，内容如下包括：算法，<a href="https://www.mikeash.com/pyblog/objc_msgsends-new-prototype.html" target="_blank" rel="noopener">objc_msgSend’s New Prototype</a> , 关于Clang相关的命令，Mach-O格式<a id="more"></a></p>
+<h2 id="Algorithm"><a href="#Algorithm" class="headerlink" title="Algorithm"></a>Algorithm</h2><p><a href="https://leetcode.com/problems/insert-into-a-binary-search-tree/submissions/" target="_blank" rel="noopener">Insert Into a Binary Search Tree</a><br><a href="https://leetcode.com/problems/search-in-a-binary-search-tree/" target="_blank" rel="noopener">Search In a Binary Search Tree</a></p>
+<h2 id="Review"><a href="#Review" class="headerlink" title="Review"></a>Review</h2><p><a href="https://www.mikeash.com/pyblog/objc_msgsends-new-prototype.html" target="_blank" rel="noopener">objc_msgSend’s New Prototype</a></p>
+<h3 id="The-True-Prototype"><a href="#The-True-Prototype" class="headerlink" title="The True Prototype"></a>The True Prototype</h3><p>objc_msgSend的原型是它最终调用的方法实现的原型，（IMP）</p>
+<h3 id="The-Minimal-Prototype"><a href="#The-Minimal-Prototype" class="headerlink" title="The Minimal Prototype"></a>The Minimal Prototype</h3><p>通过对IMP 的反向分析，因为所有方法都要有<code>self  target</code>的两个参数，推演了现在<code>msgSend</code>的进化过程<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//所有方法都要有self  target的两个参数</span></span><br><span class="line">??? objc_msgSend(id self, SEL _cmd, ???)</span><br><span class="line"></span><br><span class="line"><span class="comment">//对于返回值，我们可以尝试选择一些通用的东西。由于 Objective-C 都是关于对象的，因此假设返回值是 id 是有意义</span></span><br><span class="line">id objc_msgSend(id self, SEL _cmd, ???)</span><br><span class="line"></span><br><span class="line"><span class="comment">//那参数呢？C 实际上确实有一种方法来表示任意数量的任意类型的参数，即可变参数列表的形式的。</span></span><br><span class="line"><span class="comment">//参数列表末尾的省略号表示跟随着可变数量的任意类型的值：</span></span><br><span class="line">id objc_msgSend(id self, SEL _cmd, ...)</span><br></pre></td></tr></table></figure></p>
+<h3 id="ABI-Mismatches"><a href="#ABI-Mismatches" class="headerlink" title="ABI Mismatches"></a>ABI Mismatches</h3><p>这里可理解为调用约定（calling convention，再次安利《程序员的自我修养》）。</p>
+<h3 id="Intel-ABI"><a href="#Intel-ABI" class="headerlink" title="Intel ABI"></a>Intel ABI</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Use the old variadic prototype for objc_msgSend.</span></span><br><span class="line">   #define OBJC_OLD_DISPATCH_PROTOTYPES 1</span><br><span class="line"></span><br><span class="line">   #import &lt;Foundation/Foundation.h&gt;</span><br><span class="line">   #import &lt;objc/message.h&gt;</span><br><span class="line"></span><br><span class="line">   @interface Foo : NSObject @end</span><br><span class="line">   @implementation Foo</span><br><span class="line">   - (<span class="keyword">void</span>)log: (float)x &#123;</span><br><span class="line">       printf(<span class="string">"%f\n"</span>, x);</span><br><span class="line">   &#125;</span><br><span class="line">   @end</span><br><span class="line"></span><br><span class="line">   int main(int argc, char **argv) &#123;</span><br><span class="line">       id obj = [Foo <span class="keyword">new</span>];</span><br><span class="line">       [obj log: (float)M_PI];</span><br><span class="line">       objc_msgSend(obj, @selector(log:), (float)M_PI);</span><br><span class="line">   &#125;</span><br><span class="line">   <span class="comment">//输出</span></span><br><span class="line">   <span class="number">3.141593</span></span><br><span class="line">   <span class="number">3370280550400.000000</span></span><br></pre></td></tr></table></figure>
+<p>对于可变参数部分来说（前文已经说过，可变参数是用C 实现）。C 指定将某些类型作为可变参数传递给更大的类型。小于 int 的整数（例如char和short）被提升为 int，而 float 则被提升为 double。如果您的方法签名包括这些类型之一，则调用者无法使用可变参数原型将参数作为该确切类型传递。<br>这就是老的API 的问题，可以通过强制类型转换来解决这个问题<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">((<span class="keyword">void</span> (*)(id, SEL, float))objc_msgSend)(obj, @selector(log:), M_PI);</span><br></pre></td></tr></table></figure></p>
+<h3 id="The-New-Prototype"><a href="#The-New-Prototype" class="headerlink" title="The New Prototype"></a>The New Prototype</h3><p>对于新的原型，在使用是如果不加类型转换，则编译器会提示出来，调用者可以通过编译阶段，明确的知道问题出在哪里。</p>
+<h2 id="Tip"><a href="#Tip" class="headerlink" title="Tip"></a>Tip</h2><p>关于Objective-C 的属性关键字<code>atomic</code>，其意义为：单次操作指令不会被打断，出自《程序员的自我修养》中线程一章。只能解决简单场景下的线程安全问题，复杂场景下应采用：锁</p>
+<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://www.zhihu.com/question/312019918/answer/608965942?utm_source=weibo&amp;utm_medium=social&amp;utm_content=snapshot&amp;utm_oi=38564314218496" target="_blank" rel="noopener">关于技术驱动型公司的看法</a></p>
 
       
     </div>
@@ -473,7 +458,7 @@
       
         <div class="post-tags">
           
-            <a href="/tags/iOS/" rel="tag"># iOS</a>
+            <a href="/tags/ARTS/" rel="tag"># ARTS</a>
           
         </div>
       
@@ -486,8 +471,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2018/02/06/radiuscollectionview/" rel="next" title="radiusCollectionView">
-                <i class="fa fa-chevron-left"></i> radiusCollectionView
+              <a href="/2019/10/11/ARTS-01-dyld/" rel="next" title="ARTS(01~dyld)">
+                <i class="fa fa-chevron-left"></i> ARTS(01~dyld)
               </a>
             
           </div>
@@ -495,10 +480,6 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2018/09/15/oc->js/" rel="prev" title="OC和JS 交互">
-                OC和JS 交互 <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -542,8 +523,17 @@
       
 
       
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
 
-      <div class="site-overview-wrap sidebar-panel sidebar-panel-active">
+      <div class="site-overview-wrap sidebar-panel">
         <div class="site-overview">
           <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
             
@@ -643,6 +633,23 @@
         </div>
       </div>
 
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Algorithm"><span class="nav-number">1.</span> <span class="nav-text">Algorithm</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Review"><span class="nav-number">2.</span> <span class="nav-text">Review</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#The-True-Prototype"><span class="nav-number">2.1.</span> <span class="nav-text">The True Prototype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-Minimal-Prototype"><span class="nav-number">2.2.</span> <span class="nav-text">The Minimal Prototype</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ABI-Mismatches"><span class="nav-number">2.3.</span> <span class="nav-text">ABI Mismatches</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Intel-ABI"><span class="nav-number">2.4.</span> <span class="nav-text">Intel ABI</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#The-New-Prototype"><span class="nav-number">2.5.</span> <span class="nav-text">The New Prototype</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Tip"><span class="nav-number">3.</span> <span class="nav-text">Tip</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Share"><span class="nav-number">4.</span> <span class="nav-text">Share</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
       
 
       
