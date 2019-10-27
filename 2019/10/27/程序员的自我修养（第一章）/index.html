@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程">
+<meta name="keywords" content="《程序员的自我修养》">
+<meta property="og:type" content="article">
+<meta property="og:title" content="程序员的自我修养（第一章）">
+<meta property="og:url" content="http://yfeii.github.io/2019/10/27/程序员的自我修养（第一章）/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2019-10-27T15:00:19.473Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="程序员的自我修养（第一章）">
+<meta name="twitter:description" content="《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2019/10/27/程序员的自我修养（第一章）/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>程序员的自我修养（第一章） | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/27/程序员的自我修养（第一章）/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">程序员的自我修养（第一章）
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-27 21:47:19 / 修改时间：23:00:19" itemprop="dateCreated datePublished" datetime="2019-10-27T21:47:19+08:00">2019-10-27</time>
+            
+
+            
+              
+
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/读书/" itemprop="url" rel="index"><span itemprop="name">读书</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程<a id="more"></a></p>
+<h3 id="计算机软件体系结构"><a href="#计算机软件体系结构" class="headerlink" title="计算机软件体系结构"></a>计算机软件体系结构</h3><p>每一层通过接口通信<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Applications.png" target="_blank" rel="noopener">机构图</a></p>
+<h4 id="应用程序编程接口"><a href="#应用程序编程接口" class="headerlink" title="应用程序编程接口"></a>应用程序编程接口</h4><p> 应用程序编程接口(Application Programming Interface)的提供者是运行库，也就是说运行库决定了API的内容，比如linux下的Glibc提供POSIX的API，Windows的运行库提供 Windows API,</p>
+<h4 id="系统调用接口"><a href="#系统调用接口" class="headerlink" title="系统调用接口"></a>系统调用接口</h4><p>系统调用接口(System cal Interface) 运行时库使用操作系统提供的接口,系统接口往往以软件中断的方式提供，比如Linux使用0X80号中断作为系统调用接口，Windows 使用0X2E<br>￼</p>
+<h4 id="中断"><a href="#中断" class="headerlink" title="中断"></a>中断</h4><p>中断指当出现需要时，CPU暂时停止当前程序的执行转而执行处理新情况的程序和执行过程。即在程序运行过程中，系统出现了一个必须由CPU立即处理的情况，此时，CPU暂时中止程序的执行转而处理这个新的情况的过程就叫做中断。</p>
+<h5 id="硬件中断："><a href="#硬件中断：" class="headerlink" title="硬件中断："></a>硬件中断：</h5><p>是由与系统相连的外设(比如网卡 硬盘 键盘等)自动产生的. 每个设备或设备集都有他自己的IRQ(中断请求), 基于IRQ, CPU可以将相应的请求分发到相应的硬件驱动上(注: 硬件驱动通常是内核中的一个子程序, 而不是一个独立的进程).处理中断的驱动是需要运行在CPU上的, 因此, 当中断产生时, CPU会暂时停止当前程序的程序转而执行中断请求.</p>
+<h5 id="软件中断："><a href="#软件中断：" class="headerlink" title="软件中断："></a>软件中断：</h5><p>它是在通信进程之间通过模拟硬中断而实现的一种通信方式。软中断不会直接中断CPU, 也只有当前正在运行的代码(或进程)才会产生软中断. 软中断是一种需要内核为正在运行的进程去做一些事情(通常为I/O)的请求.</p>
+<h3 id="操作系统的作用"><a href="#操作系统的作用" class="headerlink" title="操作系统的作用"></a>操作系统的作用</h3><p>一个功能是提供抽象的接口，另一个主要功能是管理硬件资源，因为硬件的能力是有限的，无论是否使用，资源总是那么多：1GB的内存最多同时存储1GB的数据，计算机的资源:CPU，存储器（内存和磁盘）和I/O设备</p>
+<h4 id="CPU"><a href="#CPU" class="headerlink" title="CPU"></a>CPU</h4><h5 id="多道程序（Mulit-programming）（监控程序）："><a href="#多道程序（Mulit-programming）（监控程序）：" class="headerlink" title="多道程序（Mulit programming）（监控程序）："></a>多道程序（Mulit programming）（监控程序）：</h5><p>最初的实现方法，当某个程序暂时无需使用CPU时，监控程序就把另外等待的程序启动，使得CPU充分的利用起来，<br>缺点：程序之间的调度策略太粗糙，程序之间部分轻重缓急。对于有急需响应任务（交互事件）的程序是致命。可能一个点击事件要很久才被响应</p>
+<h5 id="分时系统："><a href="#分时系统：" class="headerlink" title="分时系统："></a>分时系统：</h5><p>一种稍加改进的协作模式：每个程序运行一段时间后都主动让出CPU给其他程序，windows的早期版本，Mac OS X 之前的Mac OS 都是采用这种分时调度程序的<br>缺点：当一个程序进行一个很耗时的计算，一直使用CPU，此时其他程序只能等待，看上去像死机一样</p>
+<h5 id="多任务系统："><a href="#多任务系统：" class="headerlink" title="多任务系统："></a>多任务系统：</h5><p>所有程序都以进程的方式运行在比操作系统权限更低的级别，每个进程有自己独立的空间。</p>
+<h6 id="抢占式"><a href="#抢占式" class="headerlink" title="抢占式"></a>抢占式</h6><p>CPU由操作系统统一进行分配，如果程序运行超出了一定时间，操作系统会停止该进程，将CPU 分配给其他等待的程序</p>
+<h4 id="内存"><a href="#内存" class="headerlink" title="内存"></a>内存</h4><p>1.地址不隔离：程序直接访问物理地址。可访问程序的数据。<br>2.使用效率低：没有有效的内存管理机制，<br>3.地址不确定性：由于在物理地址上，每次运行时装入的地址不同</p>
+<h5 id="虚拟地址空间"><a href="#虚拟地址空间" class="headerlink" title="虚拟地址空间"></a>虚拟地址空间</h5><p>MMU：页映射部件<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Virtual.png" target="_blank" rel="noopener">虚拟地址到物理地址的转换</a></p>
+<h5 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h5><p>把一段与程序所需要的内存空间大小的虚拟空间映射到某个地址空间，<a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%206.png" target="_blank" rel="noopener">如图</a><br>分段+虚拟地址，解决了1和3的问题，因为不同的程序被映射不同的物理空间区域，且没有任何重叠，所以在访问超过本身区域的内存时就可以采用拒绝手段（segment faut），而且分段之后，地址都只需从0x0开始编写，不需要考虑重定向的问题</p>
+<h5 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h5><p>更小粒度的内存分割和映射方法，使程序的局部性原理得到充分的发挥，大大的提高了内存的使用率，同时并不会把所有的代码和数据转载到内存中，而是把部分不常用的代码和数据留在磁盘中，等需要是通过页错误来加载</p>
+<h6 id="page-fault："><a href="#page-fault：" class="headerlink" title="page fault："></a>page fault：</h6><p>在访问的页不存在时，会触发页错误，在去加载对应的虚拟页</p>
+<h3 id="线程与进程"><a href="#线程与进程" class="headerlink" title="线程与进程"></a>线程与进程</h3><h4 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h4><p>线程的至少拥有3种状态<br>运行（Running）：此时线程正在执行<br>就绪（Waiting）：此时线程可以立刻执行，等待CPU调度（当前CPU被其他线程占用）<br>等待（Ready）：此时线程正在等待某一事件(通常是I/O或者同步)发生，无法执行<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/EITAn.png" target="_blank" rel="noopener">如图</a></p>
+<h5 id="优先级调度"><a href="#优先级调度" class="headerlink" title="优先级调度"></a>优先级调度</h5><ul>
+<li>用户指定优先</li>
+<li>级根据进入等待状态的频繁程度提升或降低优先级</li>
+<li>长时间得不到执行而被提升优先级<h5 id="轮转法"><a href="#轮转法" class="headerlink" title="轮转法"></a>轮转法</h5>每个线程执行一小段（通常是几十到几百毫秒），线程之间是交错执行的特点。这样看起来就像是同时执行</li>
+</ul>
+<h5 id="可抢占线程："><a href="#可抢占线程：" class="headerlink" title="可抢占线程："></a>可抢占线程：</h5><p>当时间片用尽后会被强制剥夺继续执行的权利，而进入就绪状态，这个过程 就叫抢占</p>
+<h5 id="不可抢占线程："><a href="#不可抢占线程：" class="headerlink" title="不可抢占线程："></a>不可抢占线程：</h5><p>必须手动发出一放弃执行的命令，才能让其他线程的得到执行，这样的模式下，线程必须主动进入就绪状态，并且也不进行任何等待操作，那么其他线程将永远无法执行。<br>在不可抢占线程中线程主动放弃执行的两种情况：<br>1.当线程试图等待某事件时(I/O等)<br>2.线程主动放弃时间片</p>
+<h4 id="线程安全"><a href="#线程安全" class="headerlink" title="线程安全"></a>线程安全</h4><h5 id="原子性："><a href="#原子性：" class="headerlink" title="原子性："></a>原子性：</h5><p>单指令的执行不会被打断，可满足简单场景下。<br>对于复杂的场合下，要保证更改的原子性使用：锁</p>
+<h5 id="二元信号量"><a href="#二元信号量" class="headerlink" title="二元信号量"></a>二元信号量</h5><p>通过对信号量+1-1的操作判断是否执行，任何线程都可以对信号量操作</p>
+<h5 id="互斥量"><a href="#互斥量" class="headerlink" title="互斥量"></a>互斥量</h5><p>和信号量类似。但是要求哪个线程获取了互斥量，哪个线程就要负责释放这个锁，其他线程释放是无效的，但是可以获取</p>
+<h5 id="临界区"><a href="#临界区" class="headerlink" title="临界区"></a>临界区</h5><p>条件被互斥量更严格，其他线程无法获取</p>
+<h5 id="读写锁："><a href="#读写锁：" class="headerlink" title="读写锁："></a>读写锁：</h5><p>被使用一种特定的场合的同步，对于数据读取频繁，但仅仅是偶尔写入。读写锁有两种获取方式：共享和独占，<a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%207.png" target="_blank" rel="noopener">如图</a></p>
+<h5 id="条件变量"><a href="#条件变量" class="headerlink" title="条件变量"></a>条件变量</h5><p>类似一个栅栏，对于条件变量，线程有两种操作，首先线程可以等待条件变量，一个条件变量可以被多个线程等待，其次线程可以换下条件变量，此时某个或所有等待次条件变量的线程都会被唤醒并继续支持<br>也就是说，使用条件变量可以让许多个线程一起等待某一个事件的发生，当事件发生时，所有线程都可以一起恢复执行。</p>
+<h4 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h4><h5 id="windows："><a href="#windows：" class="headerlink" title="windows："></a>windows：</h5><p>进程：CreateProcess<br>线程：CreateThread</p>
+<h5 id="linux-的多线程："><a href="#linux-的多线程：" class="headerlink" title="linux 的多线程："></a>linux 的多线程：</h5><p>linux下所有的执行实体都成为任务（Task），概念上类似一个单独的进程<br>API：<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/ABOD%20TUATUUIRMMUT%20TWT.png" target="_blank" rel="noopener">如图</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/《程序员的自我修养》/" rel="tag"># 《程序员的自我修养》</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/10/27/ARTS-03-module/" rel="next" title="ARTS(03~module)">
+                <i class="fa fa-chevron-left"></i> ARTS(03~module)
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description"></div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">22</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">4</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#计算机软件体系结构"><span class="nav-number">1.</span> <span class="nav-text">计算机软件体系结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#应用程序编程接口"><span class="nav-number">1.1.</span> <span class="nav-text">应用程序编程接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#系统调用接口"><span class="nav-number">1.2.</span> <span class="nav-text">系统调用接口</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#中断"><span class="nav-number">1.3.</span> <span class="nav-text">中断</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#硬件中断："><span class="nav-number">1.3.1.</span> <span class="nav-text">硬件中断：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#软件中断："><span class="nav-number">1.3.2.</span> <span class="nav-text">软件中断：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#操作系统的作用"><span class="nav-number">2.</span> <span class="nav-text">操作系统的作用</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#CPU"><span class="nav-number">2.1.</span> <span class="nav-text">CPU</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#多道程序（Mulit-programming）（监控程序）："><span class="nav-number">2.1.1.</span> <span class="nav-text">多道程序（Mulit programming）（监控程序）：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#分时系统："><span class="nav-number">2.1.2.</span> <span class="nav-text">分时系统：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#多任务系统："><span class="nav-number">2.1.3.</span> <span class="nav-text">多任务系统：</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#抢占式"><span class="nav-number">2.1.3.1.</span> <span class="nav-text">抢占式</span></a></li></ol></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#内存"><span class="nav-number">2.2.</span> <span class="nav-text">内存</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#虚拟地址空间"><span class="nav-number">2.2.1.</span> <span class="nav-text">虚拟地址空间</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#分段"><span class="nav-number">2.2.2.</span> <span class="nav-text">分段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#分页"><span class="nav-number">2.2.3.</span> <span class="nav-text">分页</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#page-fault："><span class="nav-number">2.2.3.1.</span> <span class="nav-text">page fault：</span></a></li></ol></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程与进程"><span class="nav-number">3.</span> <span class="nav-text">线程与进程</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#线程"><span class="nav-number">3.1.</span> <span class="nav-text">线程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#优先级调度"><span class="nav-number">3.1.1.</span> <span class="nav-text">优先级调度</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#轮转法"><span class="nav-number">3.1.2.</span> <span class="nav-text">轮转法</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#可抢占线程："><span class="nav-number">3.1.3.</span> <span class="nav-text">可抢占线程：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#不可抢占线程："><span class="nav-number">3.1.4.</span> <span class="nav-text">不可抢占线程：</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#线程安全"><span class="nav-number">3.2.</span> <span class="nav-text">线程安全</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#原子性："><span class="nav-number">3.2.1.</span> <span class="nav-text">原子性：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#二元信号量"><span class="nav-number">3.2.2.</span> <span class="nav-text">二元信号量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#互斥量"><span class="nav-number">3.2.3.</span> <span class="nav-text">互斥量</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#临界区"><span class="nav-number">3.2.4.</span> <span class="nav-text">临界区</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#读写锁："><span class="nav-number">3.2.5.</span> <span class="nav-text">读写锁：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#条件变量"><span class="nav-number">3.2.6.</span> <span class="nav-text">条件变量</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#进程"><span class="nav-number">3.3.</span> <span class="nav-text">进程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#windows："><span class="nav-number">3.3.1.</span> <span class="nav-text">windows：</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#linux-的多线程："><span class="nav-number">3.3.2.</span> <span class="nav-text">linux 的多线程：</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
