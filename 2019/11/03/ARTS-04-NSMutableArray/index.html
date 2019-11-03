@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="ARTS第三周，内容如下包括：算法，module介绍 , 关于Clang相关的命令，《程序员的自我修养》第一章内容总结">
+  <meta name="description" content="ARTS第四周，内容如下包括：算法，剖析NSMutableArray ,">
 <meta name="keywords" content="ARTS">
 <meta property="og:type" content="article">
-<meta property="og:title" content="ARTS(03~module)">
-<meta property="og:url" content="http://yfeii.github.io/2019/10/27/ARTS-03-module/index.html">
+<meta property="og:title" content="ARTS(04~NSMutableArray)">
+<meta property="og:url" content="http://yfeii.github.io/2019/11/03/ARTS-04-NSMutableArray/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="ARTS第三周，内容如下包括：算法，module介绍 , 关于Clang相关的命令，《程序员的自我修养》第一章内容总结">
+<meta property="og:description" content="ARTS第四周，内容如下包括：算法，剖析NSMutableArray ,">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-27T15:20:23.648Z">
+<meta property="og:updated_time" content="2019-11-03T15:49:10.581Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="ARTS(03~module)">
-<meta name="twitter:description" content="ARTS第三周，内容如下包括：算法，module介绍 , 关于Clang相关的命令，《程序员的自我修养》第一章内容总结">
+<meta name="twitter:title" content="ARTS(04~NSMutableArray)">
+<meta name="twitter:description" content="ARTS第四周，内容如下包括：算法，剖析NSMutableArray ,">
 
 
 
@@ -115,7 +115,7 @@
 
   
   
-  <link rel="canonical" href="http://yfeii.github.io/2019/10/27/ARTS-03-module/">
+  <link rel="canonical" href="http://yfeii.github.io/2019/11/03/ARTS-04-NSMutableArray/">
 
 
 
@@ -125,7 +125,7 @@
   };
 </script>
 
-  <title>ARTS(03~module) | 逆水行舟</title>
+  <title>ARTS(04~NSMutableArray) | 逆水行舟</title>
   
 
 
@@ -324,7 +324,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/27/ARTS-03-module/">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/11/03/ARTS-04-NSMutableArray/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="yfeii">
@@ -341,7 +341,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">ARTS(03~module)
+          <h1 class="post-title" itemprop="name headline">ARTS(04~NSMutableArray)
 
               
             
@@ -367,7 +367,7 @@
                 
               
 
-              <time title="创建时间：2019-10-27 21:38:43 / 修改时间：23:20:23" itemprop="dateCreated datePublished" datetime="2019-10-27T21:38:43+08:00">2019-10-27</time>
+              <time title="创建时间：2019-11-03 23:14:16 / 修改时间：23:49:10" itemprop="dateCreated datePublished" datetime="2019-11-03T23:14:16+08:00">2019-11-03</time>
             
 
             
@@ -424,12 +424,17 @@
       
 
       
-        <p>ARTS第三周，内容如下包括：算法，<a href="https://clang.llvm.org/docs/Modules.html#introduction" target="_blank" rel="noopener">module介绍</a> , 关于Clang相关的命令，《程序员的自我修养》第一章内容总结<a id="more"></a></p>
-<h2 id="Algorithm"><a href="#Algorithm" class="headerlink" title="Algorithm"></a>Algorithm</h2><p><a href="https://leetcode.com/problems/binary-tree-preorder-traversal/submissions/" target="_blank" rel="noopener">Binary Tree Preorder Traversal</a></p>
-<h2 id="Review"><a href="#Review" class="headerlink" title="Review"></a>Review</h2><p><a href="https://clang.llvm.org/docs/Modules.html#introduction" target="_blank" rel="noopener">Modules</a><br>本文首先说明了<code>#include</code>存在的问题：<br>编译时可伸缩性：在一个具有N个翻译单元和每个翻译单元包含M个标头的项目中，即使M个标头中的大多数在多个翻译单元之间共享，编译器仍在执行M x N个工作<br>易碎性：#include指令被预处理程序视为文本包含，因此在包含时会受到任何活动的宏定义的约束。如果任何活动宏定义碰巧与库中的名称冲突，则可能会破坏库API或导致库头本身的编译失败<br>工具混乱：<br>在基于C的语言中，很难构建与软件库配合使用的工具，因为库的边界不明确。哪些头属于特定的库，应以什么顺序包括这些头以确保它们正确编译？标头是C，C ++，Objective-C ++还是这些语言的变体之一？这些标头中的哪些声明实际上意味着要成为API的一部分，而仅由于必须将它们写为标头文件的一部分而存在哪些声明？</p>
-<p>然后介绍了<code>Modules</code>的使用方式，及如何解决<code>#include</code>存在的问题<br>后面有提到了<code>Modules</code>没有解决的问题<br>最后是一些使用手册</p>
-<h2 id="Tip"><a href="#Tip" class="headerlink" title="Tip"></a>Tip</h2><p>如何优雅的书写block，避免回调嵌套<a href="https://github.com/mxcl/PromiseKit" target="_blank" rel="noopener">PromiseKit</a></p>
-<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://devyang.space/2019/10/27/程序员的自我修养（第一章）/#more" target="_blank" rel="noopener">程序员的自我修养》第一章</a></p>
+        <p>ARTS第四周，内容如下包括：算法，<a href="https://ciechanow.ski/exposing-nsmutablearray/" target="_blank" rel="noopener">剖析NSMutableArray</a> , <a id="more"></a></p>
+<h2 id="Algorithm"><a href="#Algorithm" class="headerlink" title="Algorithm"></a>Algorithm</h2><p><a href="https://leetcode.com/problems/binary-tree-inorder-traversal/submissions/" target="_blank" rel="noopener">94. Binary Tree Inorder Traversal</a></p>
+<h2 id="Review"><a href="#Review" class="headerlink" title="Review"></a>Review</h2><p><a href="https://ciechanow.ski/exposing-nsmutablearray/" target="_blank" rel="noopener">剖析NSMutableArray</a><br>通过反编译获取其成员，关于如何进行反编译可<a href="https://devyang.space/2019/08/08/KVO/" target="_blank" rel="noopener">参考这篇文章</a></p>
+<ul>
+<li>_used 是计数的意思</li>
+<li>_list 是缓冲区指针</li>
+<li>_size 是缓冲区的大小</li>
+<li>_offset 是在缓冲区里的数组的第一个元素索引<br>__NSArrayM 用了环形缓冲区 (circular buffer)，<br>优点是：除非缓冲区满了，否则在任意一端插入或删除均不会要求移动任何内存。当从中间选择插入时，或选择对包含有较少元素的一边进行移动。<br>不足：当环形缓冲区扩容时，开辟新的空间，并把原空间的值复制到新空间中。<br>这里会有一个安全隐患，当多线程操作时，如果线程a，b同时执行添加操作，那么造成crash的原因是，其中某一个线程使得数组进行了扩容，此时或执行复制操作，或释放老值，存入新的数组，此时线程b再去访问时，原始数据已经被释放了。</li>
+</ul>
+<h2 id="Tip"><a href="#Tip" class="headerlink" title="Tip"></a>Tip</h2><p>在做安全防护时，通常会采用对集合对象进行防越界操作，但是结合对象又是类簇的形式，所以想要获得所有的实体类，可以通过<code>objc_getClassList </code>来获取所以已注册类的信息，在判断是否是NSArray的子类。</p>
+<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://devyang.space/2019/10/27/程序员的自我修养（第一章）/#more" target="_blank" rel="noopener">《读图解TCP/IP》</a></p>
 
       
     </div>
@@ -466,8 +471,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/10/20/ARTS-02-msg/" rel="next" title="ARTS(02~msg)">
-                <i class="fa fa-chevron-left"></i> ARTS(02~msg)
+              <a href="/2019/10/27/程序员的自我修养（第一章）/" rel="next" title="程序员的自我修养（第一章）">
+                <i class="fa fa-chevron-left"></i> 程序员的自我修养（第一章）
               </a>
             
           </div>
@@ -476,8 +481,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/10/27/程序员的自我修养（第一章）/" rel="prev" title="程序员的自我修养（第一章）">
-                程序员的自我修养（第一章） <i class="fa fa-chevron-right"></i>
+              <a href="/2019/11/03/图解TCP-IP/" rel="prev" title="图解TCP/IP">
+                图解TCP/IP <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
