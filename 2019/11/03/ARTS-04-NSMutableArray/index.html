@@ -104,7 +104,7 @@
 <meta property="og:site_name" content="逆水行舟">
 <meta property="og:description" content="ARTS第四周，内容如下包括：算法，剖析NSMutableArray ,">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-11-03T15:49:10.581Z">
+<meta property="og:updated_time" content="2019-11-03T15:51:28.340Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="ARTS(04~NSMutableArray)">
 <meta name="twitter:description" content="ARTS第四周，内容如下包括：算法，剖析NSMutableArray ,">
@@ -367,7 +367,7 @@
                 
               
 
-              <time title="创建时间：2019-11-03 23:14:16 / 修改时间：23:49:10" itemprop="dateCreated datePublished" datetime="2019-11-03T23:14:16+08:00">2019-11-03</time>
+              <time title="创建时间：2019-11-03 23:14:16 / 修改时间：23:51:28" itemprop="dateCreated datePublished" datetime="2019-11-03T23:14:16+08:00">2019-11-03</time>
             
 
             
@@ -431,10 +431,11 @@
 <li>_used 是计数的意思</li>
 <li>_list 是缓冲区指针</li>
 <li>_size 是缓冲区的大小</li>
-<li>_offset 是在缓冲区里的数组的第一个元素索引<br>__NSArrayM 用了环形缓冲区 (circular buffer)，<br>优点是：除非缓冲区满了，否则在任意一端插入或删除均不会要求移动任何内存。当从中间选择插入时，或选择对包含有较少元素的一边进行移动。<br>不足：当环形缓冲区扩容时，开辟新的空间，并把原空间的值复制到新空间中。<br>这里会有一个安全隐患，当多线程操作时，如果线程a，b同时执行添加操作，那么造成crash的原因是，其中某一个线程使得数组进行了扩容，此时或执行复制操作，或释放老值，存入新的数组，此时线程b再去访问时，原始数据已经被释放了。</li>
+<li>_offset 是在缓冲区里的数组的第一个元素索引  </li>
 </ul>
+<p>__NSArrayM 用了环形缓冲区 (circular buffer)，<br>优点是：除非缓冲区满了，否则在任意一端插入或删除均不会要求移动任何内存。当从中间选择插入时，或选择对包含有较少元素的一边进行移动。<br>不足：当环形缓冲区扩容时，开辟新的空间，并把原空间的值复制到新空间中。<br>这里会有一个安全隐患，当多线程操作时，如果线程a，b同时执行添加操作，那么造成crash的原因是，其中某一个线程使得数组进行了扩容，此时或执行复制操作，或释放老值，存入新的数组，此时线程b再去访问时，原始数据已经被释放了。</p>
 <h2 id="Tip"><a href="#Tip" class="headerlink" title="Tip"></a>Tip</h2><p>在做安全防护时，通常会采用对集合对象进行防越界操作，但是结合对象又是类簇的形式，所以想要获得所有的实体类，可以通过<code>objc_getClassList </code>来获取所以已注册类的信息，在判断是否是NSArray的子类。</p>
-<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://devyang.space/2019/10/27/程序员的自我修养（第一章）/#more" target="_blank" rel="noopener">《读图解TCP/IP》</a></p>
+<h2 id="Share"><a href="#Share" class="headerlink" title="Share"></a>Share</h2><p><a href="https://devyang.space/2019/11/03/%E5%9B%BE%E8%A7%A3TCP-IP/" target="_blank" rel="noopener">《读图解TCP/IP》</a></p>
 
       
     </div>

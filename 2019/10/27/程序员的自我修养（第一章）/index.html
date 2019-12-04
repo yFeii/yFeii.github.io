@@ -104,10 +104,17 @@
 <meta property="og:site_name" content="逆水行舟">
 <meta property="og:description" content="《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程">
 <meta property="og:locale" content="zh-CN">
-<meta property="og:updated_time" content="2019-10-27T15:00:19.473Z">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Applications.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Virtual.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%206.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/EITAn.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%207.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/ABOD%20TUATUUIRMMUT%20TWT.png">
+<meta property="og:updated_time" content="2019-11-06T06:38:21.832Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="程序员的自我修养（第一章）">
 <meta name="twitter:description" content="《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Applications.png">
 
 
 
@@ -367,12 +374,24 @@
                 
               
 
-              <time title="创建时间：2019-10-27 21:47:19 / 修改时间：23:00:19" itemprop="dateCreated datePublished" datetime="2019-10-27T21:47:19+08:00">2019-10-27</time>
+              <time title="创建时间：2019-10-27 21:47:19" itemprop="dateCreated datePublished" datetime="2019-10-27T21:47:19+08:00">2019-10-27</time>
             
 
             
               
 
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-11-06 14:38:21" itemprop="dateModified" datetime="2019-11-06T14:38:21+08:00">2019-11-06</time>
               
             
           </span>
@@ -425,7 +444,7 @@
 
       
         <p>《程序员的自我修养》第一章阶段性总结，内容包括计算机软件结构定义，操作系统的作用，线程及进程<a id="more"></a></p>
-<h3 id="计算机软件体系结构"><a href="#计算机软件体系结构" class="headerlink" title="计算机软件体系结构"></a>计算机软件体系结构</h3><p>每一层通过接口通信<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Applications.png" target="_blank" rel="noopener">机构图</a></p>
+<h3 id="计算机软件体系结构"><a href="#计算机软件体系结构" class="headerlink" title="计算机软件体系结构"></a>计算机软件体系结构</h3><p>每一层通过接口通信<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Applications.png" alt="机构图"></p>
 <h4 id="应用程序编程接口"><a href="#应用程序编程接口" class="headerlink" title="应用程序编程接口"></a>应用程序编程接口</h4><p> 应用程序编程接口(Application Programming Interface)的提供者是运行库，也就是说运行库决定了API的内容，比如linux下的Glibc提供POSIX的API，Windows的运行库提供 Windows API,</p>
 <h4 id="系统调用接口"><a href="#系统调用接口" class="headerlink" title="系统调用接口"></a>系统调用接口</h4><p>系统调用接口(System cal Interface) 运行时库使用操作系统提供的接口,系统接口往往以软件中断的方式提供，比如Linux使用0X80号中断作为系统调用接口，Windows 使用0X2E<br>￼</p>
 <h4 id="中断"><a href="#中断" class="headerlink" title="中断"></a>中断</h4><p>中断指当出现需要时，CPU暂时停止当前程序的执行转而执行处理新情况的程序和执行过程。即在程序运行过程中，系统出现了一个必须由CPU立即处理的情况，此时，CPU暂时中止程序的执行转而处理这个新的情况的过程就叫做中断。</p>
@@ -437,11 +456,11 @@
 <h5 id="多任务系统："><a href="#多任务系统：" class="headerlink" title="多任务系统："></a>多任务系统：</h5><p>所有程序都以进程的方式运行在比操作系统权限更低的级别，每个进程有自己独立的空间。</p>
 <h6 id="抢占式"><a href="#抢占式" class="headerlink" title="抢占式"></a>抢占式</h6><p>CPU由操作系统统一进行分配，如果程序运行超出了一定时间，操作系统会停止该进程，将CPU 分配给其他等待的程序</p>
 <h4 id="内存"><a href="#内存" class="headerlink" title="内存"></a>内存</h4><p>1.地址不隔离：程序直接访问物理地址。可访问程序的数据。<br>2.使用效率低：没有有效的内存管理机制，<br>3.地址不确定性：由于在物理地址上，每次运行时装入的地址不同</p>
-<h5 id="虚拟地址空间"><a href="#虚拟地址空间" class="headerlink" title="虚拟地址空间"></a>虚拟地址空间</h5><p>MMU：页映射部件<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Virtual.png" target="_blank" rel="noopener">虚拟地址到物理地址的转换</a></p>
-<h5 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h5><p>把一段与程序所需要的内存空间大小的虚拟空间映射到某个地址空间，<a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%206.png" target="_blank" rel="noopener">如图</a><br>分段+虚拟地址，解决了1和3的问题，因为不同的程序被映射不同的物理空间区域，且没有任何重叠，所以在访问超过本身区域的内存时就可以采用拒绝手段（segment faut），而且分段之后，地址都只需从0x0开始编写，不需要考虑重定向的问题</p>
+<h5 id="虚拟地址空间"><a href="#虚拟地址空间" class="headerlink" title="虚拟地址空间"></a>虚拟地址空间</h5><p>MMU：页映射部件<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Virtual.png" alt="虚拟地址到物理地址的转换"></p>
+<h5 id="分段"><a href="#分段" class="headerlink" title="分段"></a>分段</h5><p>把一段与程序所需要的内存空间大小的虚拟空间映射到某个地址空间，<img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%206.png" alt="如图"><br>分段+虚拟地址，解决了1和3的问题，因为不同的程序被映射不同的物理空间区域，且没有任何重叠，所以在访问超过本身区域的内存时就可以采用拒绝手段（segment faut），而且分段之后，地址都只需从0x0开始编写，不需要考虑重定向的问题</p>
 <h5 id="分页"><a href="#分页" class="headerlink" title="分页"></a>分页</h5><p>更小粒度的内存分割和映射方法，使程序的局部性原理得到充分的发挥，大大的提高了内存的使用率，同时并不会把所有的代码和数据转载到内存中，而是把部分不常用的代码和数据留在磁盘中，等需要是通过页错误来加载</p>
 <h6 id="page-fault："><a href="#page-fault：" class="headerlink" title="page fault："></a>page fault：</h6><p>在访问的页不存在时，会触发页错误，在去加载对应的虚拟页</p>
-<h3 id="线程与进程"><a href="#线程与进程" class="headerlink" title="线程与进程"></a>线程与进程</h3><h4 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h4><p>线程的至少拥有3种状态<br>运行（Running）：此时线程正在执行<br>就绪（Waiting）：此时线程可以立刻执行，等待CPU调度（当前CPU被其他线程占用）<br>等待（Ready）：此时线程正在等待某一事件(通常是I/O或者同步)发生，无法执行<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/EITAn.png" target="_blank" rel="noopener">如图</a></p>
+<h3 id="线程与进程"><a href="#线程与进程" class="headerlink" title="线程与进程"></a>线程与进程</h3><h4 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h4><p>线程的至少拥有3种状态<br>运行（Running）：此时线程正在执行<br>就绪（Waiting）：此时线程可以立刻执行，等待CPU调度（当前CPU被其他线程占用）<br>等待（Ready）：此时线程正在等待某一事件(通常是I/O或者同步)发生，无法执行<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/EITAn.png" alt="如图"></p>
 <h5 id="优先级调度"><a href="#优先级调度" class="headerlink" title="优先级调度"></a>优先级调度</h5><ul>
 <li>用户指定优先</li>
 <li>级根据进入等待状态的频繁程度提升或降低优先级</li>
@@ -453,10 +472,10 @@
 <h5 id="二元信号量"><a href="#二元信号量" class="headerlink" title="二元信号量"></a>二元信号量</h5><p>通过对信号量+1-1的操作判断是否执行，任何线程都可以对信号量操作</p>
 <h5 id="互斥量"><a href="#互斥量" class="headerlink" title="互斥量"></a>互斥量</h5><p>和信号量类似。但是要求哪个线程获取了互斥量，哪个线程就要负责释放这个锁，其他线程释放是无效的，但是可以获取</p>
 <h5 id="临界区"><a href="#临界区" class="headerlink" title="临界区"></a>临界区</h5><p>条件被互斥量更严格，其他线程无法获取</p>
-<h5 id="读写锁："><a href="#读写锁：" class="headerlink" title="读写锁："></a>读写锁：</h5><p>被使用一种特定的场合的同步，对于数据读取频繁，但仅仅是偶尔写入。读写锁有两种获取方式：共享和独占，<a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%207.png" target="_blank" rel="noopener">如图</a></p>
+<h5 id="读写锁："><a href="#读写锁：" class="headerlink" title="读写锁："></a>读写锁：</h5><p>被使用一种特定的场合的同步，对于数据读取频繁，但仅仅是偶尔写入。读写锁有两种获取方式：共享和独占，<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/Pasted%20Graphic%207.png" alt="如图"></p>
 <h5 id="条件变量"><a href="#条件变量" class="headerlink" title="条件变量"></a>条件变量</h5><p>类似一个栅栏，对于条件变量，线程有两种操作，首先线程可以等待条件变量，一个条件变量可以被多个线程等待，其次线程可以换下条件变量，此时某个或所有等待次条件变量的线程都会被唤醒并继续支持<br>也就是说，使用条件变量可以让许多个线程一起等待某一个事件的发生，当事件发生时，所有线程都可以一起恢复执行。</p>
 <h4 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h4><h5 id="windows："><a href="#windows：" class="headerlink" title="windows："></a>windows：</h5><p>进程：CreateProcess<br>线程：CreateThread</p>
-<h5 id="linux-的多线程："><a href="#linux-的多线程：" class="headerlink" title="linux 的多线程："></a>linux 的多线程：</h5><p>linux下所有的执行实体都成为任务（Task），概念上类似一个单独的进程<br>API：<br><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/ABOD%20TUATUUIRMMUT%20TWT.png" target="_blank" rel="noopener">如图</a></p>
+<h5 id="linux-的多线程："><a href="#linux-的多线程：" class="headerlink" title="linux 的多线程："></a>linux 的多线程：</h5><p>linux下所有的执行实体都成为任务（Task），概念上类似一个单独的进程<br>API：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/programmer-cultivation/ABOD%20TUATUUIRMMUT%20TWT.png" alt="如图"></p>
 
       
     </div>
@@ -493,8 +512,8 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
-              <a href="/2019/10/27/ARTS-03-module/" rel="next" title="ARTS(03~module)">
-                <i class="fa fa-chevron-left"></i> ARTS(03~module)
+              <a href="/2019/10/08/Mach-O详解/" rel="next" title="Mach-O详解">
+                <i class="fa fa-chevron-left"></i> Mach-O详解
               </a>
             
           </div>
@@ -503,8 +522,8 @@
 
           <div class="post-nav-prev post-nav-item">
             
-              <a href="/2019/11/03/ARTS-04-NSMutableArray/" rel="prev" title="ARTS(04~NSMutableArray)">
-                ARTS(04~NSMutableArray) <i class="fa fa-chevron-right"></i>
+              <a href="/2019/11/06/读《图解HTTP》与《图解TCP-IP》总结/" rel="prev" title="读《图解HTTP》总结">
+                读《图解HTTP》总结 <i class="fa fa-chevron-right"></i>
               </a>
             
           </div>
@@ -576,7 +595,7 @@
                 
                   <a href="/archives/">
                 
-                    <span class="site-state-item-count">24</span>
+                    <span class="site-state-item-count">18</span>
                     <span class="site-state-item-name">日志</span>
                   </a>
                 </div>
@@ -609,9 +628,7 @@
                     
                       
                     
-                      
-                    
-                    <span class="site-state-item-count">9</span>
+                    <span class="site-state-item-count">8</span>
                     <span class="site-state-item-name">分类</span>
                   </a>
                 </div>
@@ -636,7 +653,9 @@
                     
                       
                     
-                    <span class="site-state-item-count">4</span>
+                      
+                    
+                    <span class="site-state-item-count">5</span>
                     <span class="site-state-item-name">标签</span>
                   </a>
                 </div>
