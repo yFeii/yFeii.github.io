@@ -96,18 +96,18 @@
 
 
 
-  <meta name="description" content="用这篇文章来结束&amp;lt;code Objective-C的底层总结。">
+  <meta name="description" content="用这篇文章来结束 Objective-C的底层总结。">
 <meta name="keywords" content="底层">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Objective-C底层汇总">
 <meta property="og:url" content="http://yfeii.github.io/2019/12/30/Objective-C底层汇总/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="用这篇文章来结束&amp;lt;code Objective-C的底层总结。">
+<meta property="og:description" content="用这篇文章来结束 Objective-C的底层总结。">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/F25C37F5-1D05-4087-9867-DEFE6D237C53.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/5D0CC956-B300-4CDB-BD50-53C07B712C10.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/AEC188A7-3E8A-42C6-9336-4D089A643DD8.png">
-<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/28EBCE85-040D-4030-A18B-D967A6DB2055.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/28EBCE85-040D-4030-A18B-D967A6DB2055.jpg">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/D2979820-1B14-4624-AEA8-AD080DBE7EA8.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/objc_class.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/742D0229-49F9-492B-B492-4D49E19A40C4.png">
@@ -116,10 +116,10 @@
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/F7D3F61B-539B-423A-A3B4-0AE95CAE0D45.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/F7D3F61B-539B-423A-A3B4-0AE95CAE0D45.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/cache_t.png">
-<meta property="og:updated_time" content="2020-01-05T07:23:54.803Z">
+<meta property="og:updated_time" content="2020-01-05T07:41:20.980Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Objective-C底层汇总">
-<meta name="twitter:description" content="用这篇文章来结束&amp;lt;code Objective-C的底层总结。">
+<meta name="twitter:description" content="用这篇文章来结束 Objective-C的底层总结。">
 <meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/F25C37F5-1D05-4087-9867-DEFE6D237C53.png">
 
 
@@ -397,7 +397,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-01-05 15:23:54" itemprop="dateModified" datetime="2020-01-05T15:23:54+08:00">2020-01-05</time>
+                <time title="修改时间：2020-01-05 15:41:20" itemprop="dateModified" datetime="2020-01-05T15:41:20+08:00">2020-01-05</time>
               
             
           </span>
@@ -449,7 +449,7 @@
       
 
       
-        <p>用这篇文章来结束&lt;code Objective-C的底层总结。<a id="more"></a><br>既然是底层，那么一定是需要一定的&lt;code Objective-C编程基础，阅读本文的前提，</p>
+        <p>用这篇文章来结束<code> Objective-C</code>的底层总结。<a id="more"></a><br>既然是底层，那么一定是需要一定的<code>Objective-C</code>编程基础，阅读本文的前提，</p>
 <blockquote>
 <p>知晓对象，类对象，元类(只要知道概念就好)<br>知晓类是struct(同样有概念就好)      </p>
 </blockquote>
@@ -468,7 +468,7 @@
 <li>获取<code>isa </code>的二进制形式</li>
 <li>根据<code>bits</code>的定义和<code>isa</code>的二进制，我们要取其中的44位(3~47)的值。  </li>
 </ol>
-<p>实际上在定义<code>bits</code>的地方同样定义了一些宏，称为<code>mask</code>，我们可以通过<code>&amp;</code>来获取相应的值。如图。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/28EBCE85-040D-4030-A18B-D967A6DB2055.png" alt="img"><br>下我们把<code>OBJC_DISABLE_NONPOINTER_ISA</code>为<code>YES</code><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/D2979820-1B14-4624-AEA8-AD080DBE7EA8.png" alt="img"></p>
+<p>实际上在定义<code>bits</code>的地方同样定义了一些宏，称为<code>mask</code>，我们可以通过<code>&amp;</code>来获取相应的值。如图。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/28EBCE85-040D-4030-A18B-D967A6DB2055.jpg" alt="img"><br>下我们把<code>OBJC_DISABLE_NONPOINTER_ISA</code>为<code>YES</code><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/D2979820-1B14-4624-AEA8-AD080DBE7EA8.png" alt="img"></p>
 <h4 id="其他"><a href="#其他" class="headerlink" title="其他"></a>其他</h4><p>在最新的系统下(ios13或mac10.15下)对isa直接使用了指针类型，并未启用 指针优化，即使设置了<code>OBJC_DISABLE_NONPOINTER_ISA</code>也无效。</p>
 <h3 id="objc-class"><a href="#objc-class" class="headerlink" title="objc_class"></a>objc_class</h3><p><code>objc_class</code>作为<code>objc_object</code>的子类，实现了把各个类(NSObject)串联(继承)到了一起，并为<code>runtime</code>提供了基石。<br>通过<code>objc_object</code>基类提供的接口我们发现，其实对象（实例）是没有能力来“调用”方法的，因为在<code>objc_object</code>的定义中并没有方法相关的结构。是<code>objc_class</code>赋予了对象调用方法的能力。也是由<code>objc_class</code>和<code>runtime</code>使得<code>Objective-C</code>具有了面向对象的能力<br><code>objc_object</code>结构体内部可以分为四个部分，如图。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/oc_summarise/objc_class.png" alt="img"></p>
 <p>其中主要的结构为<code>cache_t</code>和<code>class_data_bits_t</code></p>
