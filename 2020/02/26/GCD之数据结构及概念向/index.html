@@ -113,7 +113,7 @@
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/96E20881C928BFCCB00A1A9FBA0FA966.jpg">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/7469FAB4-E3B2-4702-A1FC-47005E624FF5.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/DCA741E4-1507-414D-8F20-B35DD0915440.png">
-<meta property="og:updated_time" content="2020-03-10T14:40:52.877Z">
+<meta property="og:updated_time" content="2020-03-10T14:42:18.404Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="GCD之数据结构及概念向">
 <meta name="twitter:description" content="GCD系列 文章之概念向，本文结合开发文档等相关书记来介绍GCD的概念及数据结构，在后面的文章会写实现原理">
@@ -394,7 +394,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-03-10 22:40:52" itemprop="dateModified" datetime="2020-03-10T22:40:52+08:00">2020-03-10</time>
+                <time title="修改时间：2020-03-10 22:42:18" itemprop="dateModified" datetime="2020-03-10T22:42:18+08:00">2020-03-10</time>
               
             
           </span>
@@ -469,7 +469,7 @@
 <p>不要从线程和线程函数的角度思考，而是鼓励开发者从功能块的角度思考。</p>
 </blockquote>
 <p><code>GCD</code>的另一项优势是自动的随着逻辑处理器的个数而扩展。<code>GCD</code>的API本身都是基于<code>pthread_workqueue API</code>实现的，而<code>XNU</code>通过<code>workq</code>系统调用来支持这些API，具体细节请看下一章原理篇。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/96E20881C928BFCCB00A1A9FBA0FA966.jpg" alt="pthread"></p>
-<h3 id="NSOperation"><a href="#NSOperation" class="headerlink" title="NSOperation"></a>NSOperation</h3><p>一种面向对象的设计实现，相比于GCD，<code>NSOperation</code>更关注与对任务执行的控制及状态。</p>
+<h3 id="NSOperation"><a href="#NSOperation" class="headerlink" title="NSOperation"></a>NSOperation</h3><p>一种面向对象的设计实现，相比于GCD，<code>NSOperation</code>更关注任务的状态与对任务的控制。</p>
 <h3 id="NSThread"><a href="#NSThread" class="headerlink" title="NSThread"></a>NSThread</h3><p>NSThread是封装程度最小最轻量级的，使用更灵活，但要手动管理线程的生命周期、线程同步和线程加锁等，底层的实现同pthread。</p>
 <h2 id="XNU概述"><a href="#XNU概述" class="headerlink" title="XNU概述"></a>XNU概述</h2><p><code>XNU</code>是整个<code>OS X</code>的核心，本身由一下几个组件构成：</p>
 <ul>
