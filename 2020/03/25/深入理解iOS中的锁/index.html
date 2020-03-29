@@ -96,13 +96,13 @@
 
 
 
-  <meta name="description" content="源码 版本        libpthread 330.250.2   libplatform 220    概念公平锁其实我们平时使用的锁(除了os_unfair_lock)基本都是公平锁，这一类锁有着FIFO的特性即：   多个线程情况下排队，先到先获得锁。如果进入等待的顺序为12345，则最后等待结束被执行的顺序也是12345。 如图所示 非公平锁  当锁被释放后，所有线程竞争锁，抢到">
+  <meta name="description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
 <meta name="keywords" content="GCD">
 <meta property="og:type" content="article">
 <meta property="og:title" content="深入理解iOS中的锁">
 <meta property="og:url" content="http://yfeii.github.io/2020/03/25/深入理解iOS中的锁/index.html">
 <meta property="og:site_name" content="逆水行舟">
-<meta property="og:description" content="源码 版本        libpthread 330.250.2   libplatform 220    概念公平锁其实我们平时使用的锁(除了os_unfair_lock)基本都是公平锁，这一类锁有着FIFO的特性即：   多个线程情况下排队，先到先获得锁。如果进入等待的顺序为12345，则最后等待结束被执行的顺序也是12345。 如图所示 非公平锁  当锁被释放后，所有线程竞争锁，抢到">
+<meta property="og:description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
 <meta property="og:locale" content="zh-CN">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/4B24F202-E41C-411C-AFFC-3551D777ADE6.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/ADD4AC77-0978-4AF0-B617-5DD205798B47.png">
@@ -110,10 +110,10 @@
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2233.jpg">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/222333.png">
 <meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2EC6DC95-213A-46F1-9F0A-5E3483DBAB69.png">
-<meta property="og:updated_time" content="2020-03-29T09:06:20.197Z">
+<meta property="og:updated_time" content="2020-03-29T09:10:49.740Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="深入理解iOS中的锁">
-<meta name="twitter:description" content="源码 版本        libpthread 330.250.2   libplatform 220    概念公平锁其实我们平时使用的锁(除了os_unfair_lock)基本都是公平锁，这一类锁有着FIFO的特性即：   多个线程情况下排队，先到先获得锁。如果进入等待的顺序为12345，则最后等待结束被执行的顺序也是12345。 如图所示 非公平锁  当锁被释放后，所有线程竞争锁，抢到">
+<meta name="twitter:description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
 <meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/4B24F202-E41C-411C-AFFC-3551D777ADE6.png">
 
 
@@ -391,7 +391,7 @@
                 
                   <span class="post-meta-item-text">更新于</span>
                 
-                <time title="修改时间：2020-03-29 17:06:20" itemprop="dateModified" datetime="2020-03-29T17:06:20+08:00">2020-03-29</time>
+                <time title="修改时间：2020-03-29 17:10:49" itemprop="dateModified" datetime="2020-03-29T17:10:49+08:00">2020-03-29</time>
               
             
           </span>
@@ -443,24 +443,7 @@
       
 
       
-        <table>
-<thead>
-<tr>
-<th>源码</th>
-<th>版本   </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>libpthread</td>
-<td>330.250.2</td>
-</tr>
-<tr>
-<td>libplatform</td>
-<td>220</td>
-</tr>
-</tbody>
-</table>
+        <p>本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧<a id="more"></a><br>源码 | 版本<br>-|-<br>libpthread | 330.250.2<br>libplatform | 220</p>
 <h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="公平锁"><a href="#公平锁" class="headerlink" title="公平锁"></a>公平锁</h3><p>其实我们平时使用的锁(除了os_unfair_lock)基本都是公平锁，这一类锁有着<code>FIFO</code>的特性即：</p>
 <blockquote>
 </blockquote>
