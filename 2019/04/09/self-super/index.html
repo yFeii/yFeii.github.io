@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta name="keywords" content="iOS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="self super">
+<meta property="og:url" content="http://yfeii.github.io/2019/04/09/self-super/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041002.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/self_super/1.png">
+<meta property="og:updated_time" content="2019-06-18T08:25:05.275Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="self super">
+<meta name="twitter:description" content="重新认识下 self super，及msgSend msgSendSuper">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2019/04/09/self-super/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>self super | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/04/09/self-super/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">self super
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-04-09 17:44:00" itemprop="dateCreated datePublished" datetime="2019-04-09T17:44:00+08:00">2019-04-09</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-06-18 16:25:05" itemprop="dateModified" datetime="2019-06-18T16:25:05+08:00">2019-06-18</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/iOS基础/" itemprop="url" rel="index"><span itemprop="name">iOS基础</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>重新认识下 self super，及msgSend msgSendSuper<a id="more"></a><br>先看几行行老生常谈的代码。。。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">id obj1 = self.class;</span><br><span class="line">id obj2 = <span class="keyword">super</span>.class;</span><br><span class="line">id obj3 = self.superclass;</span><br><span class="line">id obj4 = <span class="keyword">super</span>.superclass;</span><br><span class="line"></span><br><span class="line">NSLog(@<span class="string">"obj1 = %@"</span>,obj1);</span><br><span class="line">NSLog(@<span class="string">"obj2 = %@"</span>,obj2);</span><br><span class="line">NSLog(@<span class="string">"obj3 = %@"</span>,obj3);</span><br><span class="line">NSLog(@<span class="string">"obj4 = %@"</span>,obj4);</span><br></pre></td></tr></table></figure>
+<p>其输出结果如图所示：(其中<code> runtimeTest</code> 继承<code>NSObject</code>,我们在<code>runtimeTest</code>类中 测试如上代码)</p>
+<p><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/1.png" alt="Markdown"></p>
+<h2 id="利用clang-命令查看其C-实现-，其中XXXX-为目标文件"><a href="#利用clang-命令查看其C-实现-，其中XXXX-为目标文件" class="headerlink" title="利用clang 命令查看其C++实现  ，其中XXXX 为目标文件"></a>利用<code>clang </code>命令查看其C++实现  ，其中XXXX 为目标文件</h2><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">clang -x objective-c -rewrite-objc -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk XXXX.m</span><br></pre></td></tr></table></figure>
+<p>其编译结果为<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">id obj1 = ((Class (*)(id, SEL))(<span class="keyword">void</span> *)objc_msgSend)((id)self, sel_registerName(<span class="string">"class"</span>));</span><br><span class="line">id obj2 = ((Class (*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"runtimeTest"</span>))&#125;, sel_registerName(<span class="string">"class"</span>));</span><br><span class="line">id obj3 = ((Class (*)(id, SEL))(<span class="keyword">void</span> *)objc_msgSend)((id)self, sel_registerName(<span class="string">"superclass"</span>));</span><br><span class="line">id obj4 = ((Class (*)(__rw_objc_super *, SEL))(<span class="keyword">void</span> *)objc_msgSendSuper)((__rw_objc_super)&#123;(id)self, (id)class_getSuperclass(objc_getClass(<span class="string">"runtimeTest"</span>))&#125;, sel_registerName(<span class="string">"superclass"</span>));</span><br><span class="line"></span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_0,obj1);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_1,obj2);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_2,obj3);</span><br><span class="line">NSLog((NSString *)&amp;__NSConstantStringImpl__var_folders_ng_8ncwcfkj69n6sh2hxlsfzz300000gn_T_runtimeTest_929dba_mi_3,obj4);</span><br></pre></td></tr></table></figure></p>
+<p>从<code>objc/message.h</code>中 <code>objc_msgSend </code>的参数说明可以看出其第一个参数为消息的接收者，<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2.png" alt="Markdown"><br>而<code>objc_msgSendSuper </code>参数的说明中，我们需要注意一点，<code>objc_msgSendSuper</code>方法是直接从父类的方法列表中找实现，所以当我们使用<code>super</code>调用<br>方法时，运行时会将<code>[super callFunction]</code>转换为<code>objc_msgSendSuper</code>并且父类的方法中寻找实现，以此来实现调用父类方法，如下图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041002.png" alt="Markdown"></p>
+<p><code>objc_msgSendSuper</code>第一个参数为一个名为<code>objc_super </code>的结构体，其构成如下<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/3.png" alt="Markdown"></p>
+<p>从上面的<code>obj1</code>和<code>obj2</code> 的示例里可以看出，<code>obj1</code>的接受者参数为<code>self</code>，<code>obj2</code>在<code>objc_super</code>的结构体中，<code>receiver</code>的值同样是<code>self</code>.<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/4.png" alt="Markdown"></p>
+<h2 id="NSObject的class方法实现源码地址"><a href="#NSObject的class方法实现源码地址" class="headerlink" title="NSObject的class方法实现源码地址"></a>NSObject的<code>class</code>方法实现<a href="https://opensource.apple.com/source/objc4/objc4-208/runtime/Object.m.auto.html" target="_blank" rel="noopener">源码地址</a></h2><p><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/2019041001.png" alt="Markdown"><br>在<code>class</code>的实现中，我们看到其返回值为<code>isa</code>，同时我们也注意到，在发起消息时传入的接收者都为<code>self</code>(obj1和obj2的示例中，即为runtimeTest类的实例)，<br>所以在其父类的<code>class</code>方法实现中，此时<code>isa</code> 也都为<code>runtimeTest</code>类，所以我们最终obj1和obj2的打印结果都为runtimeTest,<br>但是在obj3和obj4的实例中，<code>superclass</code>方法返回的是<code>((struct objc_class *)self)-&gt;super_class</code>。所以结果为<code>runtimeTest</code>的父类即：<code>NSObject</code> 。<br><strong>2019.05.13更新</strong></p>
+<blockquote>
+<blockquote>
+<p>这里面有一个错误，就是上面截图的class方法  是类方法，并不是实例方法。下面补充实例方法的实现<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/self_super/1.png" alt="Markdown"></p>
+</blockquote>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><code>self</code> 与<code>super</code> 在调用方法时，在运行时的变现有所不同，<code>self</code>为<code>objc_msgSend</code>，<code>super</code>为<code>objc_msgSendSuper</code>。</li>
+<li><code>objc_msgSend</code> 会优先从当前类中找实现。</li>
+<li><code>objc_msgSendSuper</code> 直接从父类中寻找实现。</li>
+<li>之所以上面4个示例的输出结果为runtimeTest，runtimeTest，NSObject，NSObject，是由消息的接收者与父类的方法共同决定的。</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/03/05/di-san-fang-xue-xi-ji-lu-zhi-yymemorycache/" rel="next" title="第三方学习记录之YYMemoryCache">
+                <i class="fa fa-chevron-left"></i> 第三方学习记录之YYMemoryCache
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/04/11/at-synthesize/" rel="prev" title="@synthesize">
+                @synthesize <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#利用clang-命令查看其C-实现-，其中XXXX-为目标文件"><span class="nav-number">1.</span> <span class="nav-text">利用clang 命令查看其C++实现  ，其中XXXX 为目标文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSObject的class方法实现源码地址"><span class="nav-number">2.</span> <span class="nav-text">NSObject的class方法实现源码地址</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

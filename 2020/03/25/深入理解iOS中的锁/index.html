@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
+<meta name="keywords" content="GCD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="深入理解iOS中的锁">
+<meta property="og:url" content="http://yfeii.github.io/2020/03/25/深入理解iOS中的锁/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/4B24F202-E41C-411C-AFFC-3551D777ADE6.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/ADD4AC77-0978-4AF0-B617-5DD205798B47.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/222.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2233.jpg">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/222333.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2EC6DC95-213A-46F1-9F0A-5E3483DBAB69.png">
+<meta property="og:updated_time" content="2020-03-29T09:13:23.277Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="深入理解iOS中的锁">
+<meta name="twitter:description" content="本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/4B24F202-E41C-411C-AFFC-3551D777ADE6.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2020/03/25/深入理解iOS中的锁/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>深入理解iOS中的锁 | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2020/03/25/深入理解iOS中的锁/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">深入理解iOS中的锁
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-03-25 23:05:40" itemprop="dateCreated datePublished" datetime="2020-03-25T23:05:40+08:00">2020-03-25</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-03-29 17:13:23" itemprop="dateModified" datetime="2020-03-29T17:13:23+08:00">2020-03-29</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/多线程/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文主要探索锁的底层实现，如果你想知道锁是如何让一个线程主动让出时间片，那么就来看看吧<a id="more"></a><br>源码 | 版本<br>-|-<br>libpthread | 330.250.2<br>libplatform | 220</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="公平锁"><a href="#公平锁" class="headerlink" title="公平锁"></a>公平锁</h3><p>其实我们平时使用的锁(除了os_unfair_lock)基本都是公平锁，这一类锁有着<code>FIFO</code>的特性即：</p>
+<blockquote>
+</blockquote>
+<p>多个线程情况下排队，先到先获得锁。<br>如果进入等待的顺序为12345，则最后等待结束被执行的顺序也是12345。</p>
+<p>如图所示</p>
+<h3 id="非公平锁"><a href="#非公平锁" class="headerlink" title="非公平锁"></a>非公平锁</h3><blockquote>
+</blockquote>
+<p>当锁被释放后，所有线程竞争锁，抢到的线程就会获得锁。</p>
+<p>在iOS 上的非公平锁为<code>os_unfair_lock</code>。</p>
+<h3 id="汇编"><a href="#汇编" class="headerlink" title="汇编"></a>汇编</h3><p>系统调用：<br>arm64汇编中使用<code>svc #0x80</code>来实现系统调用。<br>原子性的保证：<br>x86使用<code>lock</code>+指令(ADD，cmpxchg等)。<br>arm64使用LDXXX(LDADD)。</p>
+<h2 id="锁的实现"><a href="#锁的实现" class="headerlink" title="锁的实现"></a>锁的实现</h2><p>先从Foundation说起。<br><code>Foundation</code> 中的锁都是对<code>POSXI</code>中锁的封装，对应关系如下：<br>Foundation | POSIX<br>-|-<br>NSLock | pthread_mutex_t<br>NSRecursiveLock | pthread_mutex_t(Recursive)</p>
+<h3 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">    <span class="keyword">for</span> (int i = <span class="number">0</span>; i&lt;<span class="number">10</span>; i++) &#123;</span><br><span class="line">        sleep(<span class="number">0.5</span>);<span class="comment">//确保入队的顺序为123456789</span></span><br><span class="line">        dispatch_async(dispatch_get_global_queue(<span class="number">0</span>, <span class="number">0</span>), ^&#123;</span><br><span class="line">            </span><br><span class="line">            printf(<span class="string">"\n i = %d is start wait"</span>,i);</span><br><span class="line">                        pthread_mutex_lock(&amp;plock);</span><br><span class="line"><span class="comment">//                        os_unfair_lock_lock(&amp;olock);</span></span><br><span class="line">            printf(<span class="string">"\n i = %d is doing"</span>,i);</span><br><span class="line">                        long p = <span class="number">0</span>;</span><br><span class="line">                        <span class="keyword">while</span> (p&lt;<span class="number">10000000</span>) &#123;<span class="comment">//确保多线程耗时使锁生效</span></span><br><span class="line">                            p++;</span><br><span class="line">                        &#125;</span><br><span class="line">                        pthread_mutex_unlock(&amp;plock);</span><br><span class="line"><span class="comment">//                        os_unfair_lock_unlock(&amp;olock);</span></span><br><span class="line">        &#125;);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>这里一定要用<code>printf</code>或者更高效的方式，不可以使用<code>NSLog</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">i = <span class="number">0</span> is start wait</span><br><span class="line">i = <span class="number">0</span> is doing</span><br><span class="line">i = <span class="number">1</span> is start wait</span><br><span class="line">i = <span class="number">2</span> is start wait</span><br><span class="line">i = <span class="number">3</span> is start wait</span><br><span class="line">i = <span class="number">4</span> is start wait</span><br><span class="line">i = <span class="number">5</span> is start wait</span><br><span class="line">i = <span class="number">6</span> is start wait</span><br><span class="line">i = <span class="number">7</span> is start wait</span><br><span class="line">i = <span class="number">8</span> is start wait</span><br><span class="line">i = <span class="number">9</span> is start wait</span><br><span class="line">i = <span class="number">1</span> is doing</span><br><span class="line">i = <span class="number">3</span> is doing</span><br><span class="line">i = <span class="number">5</span> is doing</span><br><span class="line">i = <span class="number">4</span> is doing</span><br><span class="line">i = <span class="number">9</span> is doing</span><br><span class="line">i = <span class="number">8</span> is doing</span><br><span class="line">i = <span class="number">2</span> is doing</span><br><span class="line">i = <span class="number">7</span> is doing</span><br><span class="line">i = <span class="number">6</span> is doing</span><br></pre></td></tr></table></figure></p>
+<h2 id="pthread-mutex-t"><a href="#pthread-mutex-t" class="headerlink" title="pthread_mutex_t"></a>pthread_mutex_t</h2><p>先来看互斥体的定义<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">typedef struct &#123;</span><br><span class="line">    long sig;</span><br><span class="line">    _pthread_lock lock;</span><br><span class="line">    union &#123;</span><br><span class="line">        uint32_t value;</span><br><span class="line">        struct _pthread_mutex_options options;<span class="comment">//互斥体的一些可选属性，如：递归锁</span></span><br><span class="line">    &#125; mtxopts;</span><br><span class="line">    int16_t prioceiling;</span><br><span class="line">    int16_t priority;</span><br><span class="line">#if defined(__LP64__)</span><br><span class="line">    uint32_t _pad;</span><br><span class="line">#endif</span><br><span class="line">    uint32_t m_tid[<span class="number">2</span>]; <span class="comment">// thread id of thread that has mutex locked</span></span><br><span class="line">    uint32_t m_seq[<span class="number">2</span>]; <span class="comment">// mutex sequence id </span></span><br><span class="line">    uint32_t m_mis[<span class="number">2</span>]; <span class="comment">// for misaligned locks m_tid/m_seq will span into here</span></span><br><span class="line">#if defined(__LP64__)</span><br><span class="line">    uint32_t _reserved[<span class="number">4</span>];</span><br><span class="line">#else</span><br><span class="line">    uint32_t _reserved[<span class="number">1</span>];</span><br><span class="line">#endif</span><br><span class="line">&#125; _pthread_mutex;</span><br></pre></td></tr></table></figure></p>
+<p>对于锁的过程，我们可以通过<code>system trace</code>来查看一个线程的调度状态<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/4B24F202-E41C-411C-AFFC-3551D777ADE6.png" alt="img"><br>切换为线程调度状态<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/ADD4AC77-0978-4AF0-B617-5DD205798B47.png" alt="img"><br>线程的状态说明：</p>
+<ul>
+<li>Running，线程在CPU上运行。</li>
+<li>Blocked，线程被挂起，原因有很多，比如等待锁，sleep，File Backed Page In等等。</li>
+<li>Runnable，线程处于可执行状态，等CPU空闲的时候，就可以运行</li>
+<li>Interrupted，被打断，通常是因为一些系统事件，一般不需要关注</li>
+<li>Preempted，被抢占，优先级更高的线程进入了Runnable状态</li>
+</ul>
+<p>我们可以看到一个处于等待中的线程的调用栈：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/222.png" alt="img"></p>
+<p>还有<br>我们亦可以通过IDA等反汇编工具来查看。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2233.jpg" alt="img"></p>
+<p>下面根据调用栈，来看一下具体的函数实现。</p>
+<h3 id="pthread-mutex-t-如何实现递归"><a href="#pthread-mutex-t-如何实现递归" class="headerlink" title="pthread_mutex_t 如何实现递归"></a>pthread_mutex_t 如何实现递归</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">_pthread_mutex_firstfit_lock_slow(_pthread_mutex *mutex, bool trylock)</span><br><span class="line">&#123;</span><br><span class="line">    int res, recursive = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    mutex_seq *seqaddr;</span><br><span class="line">    MUTEX_GETSEQ_ADDR(mutex, &amp;seqaddr);</span><br><span class="line"></span><br><span class="line">    mutex_seq oldseq, newseq;</span><br><span class="line">    mutex_seq_load(seqaddr, &amp;oldseq);</span><br><span class="line"></span><br><span class="line">    uint64_t *tidaddr;</span><br><span class="line">    MUTEX_GETTID_ADDR(mutex, &amp;tidaddr);</span><br><span class="line">    uint64_t oldtid, selfid = _pthread_selfid_direct();</span><br><span class="line">    <span class="comment">//处理递归锁</span></span><br><span class="line">    res = _pthread_mutex_lock_handle_options(mutex, trylock, tidaddr);</span><br><span class="line">    <span class="keyword">if</span> (res &gt; <span class="number">0</span>) &#123;</span><br><span class="line">        recursive = <span class="number">1</span>;</span><br><span class="line">        res = <span class="number">0</span>;</span><br><span class="line">        goto out;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (res &lt; <span class="number">0</span>) &#123;</span><br><span class="line">        res = -res;</span><br><span class="line">        goto out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    PTHREAD_TRACE(psynch_ffmutex_lock_updatebits | DBG_FUNC_START, mutex,</span><br><span class="line">            oldseq.lgenval, oldseq.ugenval, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    bool gotlock;</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        newseq = oldseq;</span><br><span class="line">        oldtid = os_atomic_load(tidaddr, relaxed);</span><br><span class="line"></span><br><span class="line">        gotlock = is_rwl_ebit_clear(oldseq.lgenval);</span><br><span class="line">        <span class="keyword">if</span> (trylock &amp;&amp; !gotlock) &#123;</span><br><span class="line">            <span class="comment">// We still want to perform the CAS here, even though it won't</span></span><br><span class="line">            <span class="comment">// do anything so that it fails if someone unlocked while we were</span></span><br><span class="line">            <span class="comment">// in the loop</span></span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (gotlock) &#123;</span><br><span class="line">            <span class="comment">// In first-fit, getting the lock simply adds the E-bit</span></span><br><span class="line">            newseq.lgenval |= PTH_RWL_EBIT;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// Failed to get the lock, increment the L-val and go to</span></span><br><span class="line">            <span class="comment">// the kernel to sleep</span></span><br><span class="line">            newseq.lgenval += PTHRW_INC;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!mutex_seq_atomic_cmpxchgv(seqaddr, &amp;oldseq, &amp;newseq, acquire));</span><br><span class="line"></span><br><span class="line">    PTHREAD_TRACE(psynch_ffmutex_lock_updatebits | DBG_FUNC_END, mutex,</span><br><span class="line">            newseq.lgenval, newseq.ugenval, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (gotlock) &#123;</span><br><span class="line">        os_atomic_store(tidaddr, selfid, relaxed);</span><br><span class="line">        res = <span class="number">0</span>;</span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_ulock, mutex, newseq.lgenval,</span><br><span class="line">                newseq.ugenval, selfid);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (trylock) &#123;</span><br><span class="line">        res = EBUSY;</span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_utrylock_failed, mutex, newseq.lgenval,</span><br><span class="line">                newseq.ugenval, oldtid);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_ulock | DBG_FUNC_START, mutex,</span><br><span class="line">                newseq.lgenval, newseq.ugenval, oldtid);</span><br><span class="line">        res = _pthread_mutex_firstfit_lock_wait(mutex, newseq, oldtid);</span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_ulock | DBG_FUNC_END, mutex,</span><br><span class="line">                newseq.lgenval, newseq.ugenval, oldtid);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (res == <span class="number">0</span> &amp;&amp; _pthread_mutex_is_recursive(mutex)) &#123;</span><br><span class="line">        mutex-&gt;mtxopts.options.lock_count = <span class="number">1</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">out:</span><br><span class="line">#if PLOCKSTAT</span><br><span class="line">    <span class="keyword">if</span> (res == <span class="number">0</span>) &#123;</span><br><span class="line">        PLOCKSTAT_MUTEX_ACQUIRE((pthread_mutex_t *)mutex, recursive, <span class="number">0</span>);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        PLOCKSTAT_MUTEX_ERROR((pthread_mutex_t *)mutex, res);</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个需要留意的点，就是递归锁的实现。当前的<code>pthread_mutex</code>结构体字段<code>options</code>中会维护一个<code>lockcount</code>，来记录加锁的次数，从而实现递归锁。</p>
+<p>如果是递归锁，且已经获得了锁，则至今进入out流程，不会再次进入系统调用的流程。</p>
+<p>接下来是等待执行<code>_pthread_mutex_firstfit_lock_wait</code>，<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> int</span><br><span class="line">_pthread_mutex_firstfit_lock_wait(_pthread_mutex *mutex, mutex_seq newseq,</span><br><span class="line">        uint64_t oldtid)</span><br><span class="line">&#123;</span><br><span class="line">    uint64_t *tidaddr;</span><br><span class="line">    MUTEX_GETTID_ADDR(mutex, &amp;tidaddr);</span><br><span class="line">    uint64_t selfid = _pthread_selfid_direct();</span><br><span class="line"></span><br><span class="line">    PLOCKSTAT_MUTEX_BLOCK((pthread_mutex_t *)mutex);</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        uint32_t uval;</span><br><span class="line">        <span class="keyword">do</span> &#123;</span><br><span class="line">            PTHREAD_TRACE(psynch_ffmutex_wait | DBG_FUNC_START, mutex,</span><br><span class="line">                    newseq.lgenval, newseq.ugenval, mutex-&gt;mtxopts.value);</span><br><span class="line">            uval = __psynch_mutexwait(mutex, newseq.lgenval, newseq.ugenval,</span><br><span class="line">                    oldtid, mutex-&gt;mtxopts.value);</span><br><span class="line">            PTHREAD_TRACE(psynch_ffmutex_wait | DBG_FUNC_END, mutex,</span><br><span class="line">                    uval, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">            oldtid = os_atomic_load(tidaddr, relaxed);</span><br><span class="line">        &#125; <span class="keyword">while</span> (uval == (uint32_t)<span class="number">-1</span>);</span><br><span class="line">    &#125; <span class="keyword">while</span> (!_pthread_mutex_firstfit_lock_updatebits(mutex, selfid, &amp;newseq));</span><br><span class="line">    PLOCKSTAT_MUTEX_BLOCKED((pthread_mutex_t *)mutex, BLOCK_SUCCESS_PLOCKSTAT);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>__psynch_mutexwait</code>被实现在<code>XNU</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* pthread synchroniser syscalls */</span></span><br><span class="line">int</span><br><span class="line">psynch_mutexwait(proc_t p, struct psynch_mutexwait_args *uap, uint32_t *retval)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> pthread_functions-&gt;psynch_mutexwait(p, uap-&gt;mutex, uap-&gt;mgen, uap-&gt;ugen, uap-&gt;tid, uap-&gt;flags, retval);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>pthread_functions</code>是<code>pthread</code>向<code>xnu</code>预先注册的一个函数表，与之一起被注册的还有<code>pthread callback</code><br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line">/*</span><br><span class="line"> * pthread_kext_register is called by pthread.kext upon load, it has to provide</span><br><span class="line"> * us with a function pointer table of pthread internal calls. In return, this</span><br><span class="line"> * file provides it with a table of function pointers it needs.</span><br><span class="line"> */</span><br><span class="line">void</span><br><span class="line">pthread_kext_register(pthread_functions_t fns, pthread_callbacks_t *callbacks)</span><br><span class="line">&#123;</span><br><span class="line">    if (pthread_functions != NULL) &#123;</span><br><span class="line">        panic(&quot;Re-initialisation of pthread kext callbacks.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (callbacks != NULL) &#123;</span><br><span class="line">        *callbacks = &amp;pthread_callbacks;</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">        panic(&quot;pthread_kext_register called without callbacks pointer.&quot;);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    if (fns) &#123;</span><br><span class="line">        pthread_functions = fns;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>pthread_kext_register</code>是在<code>libpthread</code>基于mach内核扩展实现(pthread.kext)。这两个参数都非常重要。</p>
+<h3 id="pthread-functions-t"><a href="#pthread-functions-t" class="headerlink" title="pthread_functions_t"></a>pthread_functions_t</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">const</span> struct pthread_functions_s pthread_internal_functions = &#123;</span><br><span class="line">    .pthread_init = _pthread_init,</span><br><span class="line">    .pth_proc_hashinit = _pth_proc_hashinit,</span><br><span class="line">    .pth_proc_hashdelete = _pth_proc_hashdelete,</span><br><span class="line">    .bsdthread_create = _bsdthread_create,</span><br><span class="line">    .bsdthread_register = _bsdthread_register,</span><br><span class="line">    .bsdthread_terminate = _bsdthread_terminate,</span><br><span class="line">    .thread_selfid = _thread_selfid,</span><br><span class="line"></span><br><span class="line">    .psynch_mutexwait = _psynch_mutexwait,</span><br><span class="line">    .psynch_mutexdrop = _psynch_mutexdrop,</span><br><span class="line">    .psynch_cvbroad = _psynch_cvbroad,</span><br><span class="line">    .psynch_cvsignal = _psynch_cvsignal,</span><br><span class="line">    .psynch_cvwait = _psynch_cvwait,</span><br><span class="line">    .psynch_cvclrprepost = _psynch_cvclrprepost,</span><br><span class="line">    .psynch_rw_longrdlock = _psynch_rw_longrdlock,</span><br><span class="line">    .psynch_rw_rdlock = _psynch_rw_rdlock,</span><br><span class="line">    .psynch_rw_unlock = _psynch_rw_unlock,</span><br><span class="line">    .psynch_rw_wrlock = _psynch_rw_wrlock,</span><br><span class="line">    .psynch_rw_yieldwrlock = _psynch_rw_yieldwrlock,</span><br><span class="line"></span><br><span class="line">    .pthread_find_owner = _pthread_find_owner,</span><br><span class="line">    .pthread_get_thread_kwq = _pthread_get_thread_kwq,</span><br><span class="line"></span><br><span class="line">    .workq_create_threadstack = workq_create_threadstack,</span><br><span class="line">    .workq_destroy_threadstack = workq_destroy_threadstack,</span><br><span class="line">    .workq_setup_thread = workq_setup_thread,</span><br><span class="line">    .workq_handle_stack_events = workq_handle_stack_events,</span><br><span class="line">    .workq_markfree_threadstack = workq_markfree_threadstack,</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<h3 id="pthread-callbacks-t"><a href="#pthread-callbacks-t" class="headerlink" title="pthread_callbacks_t"></a>pthread_callbacks_t</h3><p>这个结构体内容很多，有兴趣的点开查看</p>
+<details><br><summary>thread</summary><br><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br></pre></td><td class="code"><pre><span class="line">typedef <span class="keyword">const</span> struct pthread_callbacks_s &#123;</span><br><span class="line">    int version;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* config information */</span></span><br><span class="line">    uint32_t config_thread_max;</span><br><span class="line">    uint32_t (*get_task_threadmax)(<span class="keyword">void</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* proc.h accessors */</span></span><br><span class="line">    uint64_t (*proc_get_register)(struct proc *t);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_register)(struct proc *t);</span><br><span class="line"></span><br><span class="line">    user_addr_t (*proc_get_threadstart)(struct proc *t);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_threadstart)(struct proc *t, user_addr_t addr);</span><br><span class="line">    user_addr_t (*proc_get_wqthread)(struct proc *t);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_wqthread)(struct proc *t, user_addr_t addr);</span><br><span class="line">    int (*proc_get_pthsize)(struct proc *t);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_pthsize)(struct proc *t, int size);</span><br><span class="line"></span><br><span class="line">    thread_t (*task_findtid)(task_t t, uint64_t tid);</span><br><span class="line">    <span class="keyword">void</span> (*thread_deallocate_safe)(thread_t);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_dispatchqueue_offset;</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_dispatchqueue_offset)(struct proc *t, uint64_t offset);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_wqlockptr;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_wqinitingptr;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_wqptr;</span><br><span class="line"></span><br><span class="line">    wait_result_t (*psynch_wait_prepare)(uintptr_t kwq,</span><br><span class="line">        struct turnstile **tstore, thread_t owner, block_hint_t block_hint,</span><br><span class="line">        uint64_t deadline);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> (*psynch_wait_update_complete)(struct turnstile *turnstile);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> (*psynch_wait_complete)(uintptr_t kwq, struct turnstile **tstore);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> (*psynch_wait_cleanup)(<span class="keyword">void</span>);</span><br><span class="line"></span><br><span class="line">    kern_return_t (*psynch_wait_wakeup)(uintptr_t kwq,</span><br><span class="line">        struct ksyn_waitq_element *kwe, struct turnstile **tstore);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> (*psynch_wait_update_owner)(uintptr_t kwq, thread_t owner,</span><br><span class="line">        struct turnstile **tstore);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span>* (*proc_get_pthhash)(struct proc *t);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_pthhash)(struct proc *t, <span class="keyword">void</span>* ptr);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* bsd/sys/user.h */</span></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_uthread_get_threadlist;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_uthread_set_threadlist;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_uthread_get_sigmask;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_uthread_set_sigmask;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span>* (*uthread_get_uukwe)(struct uthread *t);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_uthread_get_returnval;</span><br><span class="line">    <span class="keyword">void</span> (*uthread_set_returnval)(struct uthread *t, int val);</span><br><span class="line">    int (*uthread_is_cancelled)(struct uthread *t);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* vm_protos.h calls */</span></span><br><span class="line">    ipc_space_t (*task_get_ipcspace)(task_t t);</span><br><span class="line">    mach_port_name_t (*ipc_port_copyout_send)(ipc_port_t sright, ipc_space_t space);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* osfmk/vm/vm_map.h */</span></span><br><span class="line">    kern_return_t (*vm_map_page_info)(vm_map_t map, vm_map_offset_t offset, vm_page_info_flavor_t flavor, vm_page_info_t info, mach_msg_type_number_t *count);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_vm_map_switch;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* wq functions */</span></span><br><span class="line">    kern_return_t (*thread_set_wq_state32)(thread_t thread, thread_state_t state);</span><br><span class="line">#if !defined(__arm__)</span><br><span class="line">    kern_return_t (*thread_set_wq_state64)(thread_t thread, thread_state_t state);</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* sched_prim.h */</span></span><br><span class="line">    <span class="keyword">void</span> (*thread_exception_return)(<span class="keyword">void</span>);</span><br><span class="line">    <span class="keyword">void</span> (*thread_bootstrap_return)(<span class="keyword">void</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_absolutetime_to_microtime;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_set_workq_pri;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_set_workq_qos;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* osfmk/kern/thread.h */</span></span><br><span class="line">    struct uthread* (*get_bsdthread_info)(thread_t th);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_sched_call;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_static_param;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_create_workq_waiting_parameter;</span><br><span class="line">    kern_return_t (*thread_policy_set_internal)(thread_t t, thread_policy_flavor_t flavour, thread_policy_t info, mach_msg_type_number_t count);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_affinity_set;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* bsd/sys/systm.h */</span></span><br><span class="line">    <span class="keyword">void</span> (*unix_syscall_return)(int error);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_zalloc;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_zfree;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_zinit;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* bsd/kern/kern_sig.c */</span></span><br><span class="line">    <span class="keyword">void</span> (*__pthread_testcancel)(int);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* calls without portfolio */</span></span><br><span class="line">    kern_return_t (*mach_port_deallocate)(ipc_space_t space, mach_port_name_t name);</span><br><span class="line">    kern_return_t (*semaphore_signal_internal_trap)(mach_port_name_t sema_name);</span><br><span class="line">    vm_map_t (*current_map)(<span class="keyword">void</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* osfmk/kern/thread.h */</span></span><br><span class="line">    ipc_port_t (*convert_thread_to_port)(thread_t th);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* mach/task.h */</span></span><br><span class="line">    kern_return_t (*thread_create)(task_t parent_task, thread_act_t *child_act);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* mach/thread_act.h */</span></span><br><span class="line">    kern_return_t (*thread_resume)(thread_act_t target_act);</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* bsd/sys/event.h */</span></span><br><span class="line">    int (*kevent_workq_internal)(struct proc *p,</span><br><span class="line">        user_addr_t changelist, int nchanges,</span><br><span class="line">        user_addr_t eventlist, int nevents,</span><br><span class="line">        user_addr_t data_out, user_size_t *data_available,</span><br><span class="line">        unsigned int flags, int32_t *retval);</span><br><span class="line"></span><br><span class="line">#if defined(__arm__)</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_map_is_1gb;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_dispatchqueue_serialno_offset;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_set_dispatchqueue_serialno_offset;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_usynch_thread_qos_add_override_for_resource_check_owner;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_set_stack_addr_hint;</span><br><span class="line"></span><br><span class="line">    uint32_t (*proc_get_pthread_tsd_offset)(struct proc *p);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_pthread_tsd_offset)(struct proc *p, uint32_t pthread_tsd_offset);</span><br><span class="line"></span><br><span class="line">    kern_return_t (*thread_set_tsd_base)(thread_t thread, mach_vm_offset_t tsd_base);</span><br><span class="line"></span><br><span class="line">    int     (*proc_usynch_get_requested_thread_qos)(struct uthread *);</span><br><span class="line">    uint64_t (*proc_get_mach_thread_self_tsd_offset)(struct proc *p);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_mach_thread_self_tsd_offset)(struct proc *p, uint64_t mach_thread_self_tsd_offset);</span><br><span class="line"></span><br><span class="line">    kern_return_t (*thread_policy_get)(thread_t t, thread_policy_flavor_t flavor, thread_policy_t info, mach_msg_type_number_t *count, boolean_t *get_default);</span><br><span class="line">    boolean_t (*qos_main_thread_active)(<span class="keyword">void</span>);</span><br><span class="line"></span><br><span class="line">    kern_return_t (*thread_set_voucher_name)(mach_port_name_t name);</span><br><span class="line"></span><br><span class="line">    boolean_t (*proc_usynch_thread_qos_add_override_for_resource)(task_t task, struct uthread *, uint64_t tid, int override_qos, boolean_t first_override_for_resource, user_addr_t resource, int resource_type);</span><br><span class="line">    boolean_t (*proc_usynch_thread_qos_remove_override_for_resource)(task_t task, struct uthread *, uint64_t tid, user_addr_t resource, int resource_type);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_usynch_thread_qos_reset_override_for_resource;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_init_wqptr_or_wait;</span><br><span class="line"></span><br><span class="line">    uint16_t (*thread_set_tag)(thread_t thread, uint16_t tag);</span><br><span class="line">    uint16_t (*thread_get_tag)(thread_t thread);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_usynch_thread_qos_squash_override_for_resource;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_task_get_default_manager_qos;</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_thread_create_workq_waiting;</span><br><span class="line"></span><br><span class="line">    user_addr_t (*proc_get_stack_addr_hint)(struct proc *p);</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_stack_addr_hint)(struct proc *p, user_addr_t stack_addr_hint);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_get_return_to_kernel_offset;</span><br><span class="line">    <span class="keyword">void</span> (*proc_set_return_to_kernel_offset)(struct proc *t, uint64_t offset);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_workloop_fulfill_threadreq;</span><br><span class="line">    <span class="keyword">void</span> (*thread_will_park_or_terminate)(thread_t thread);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> *__unused_was_qos_max_parallelism;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* proc_internal.h: struct proc user_stack accessor */</span></span><br><span class="line">    user_addr_t (*proc_get_user_stack)(struct proc *p);</span><br><span class="line">    <span class="keyword">void</span> *__unused_was_proc_set_user_stack;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* padding for future */</span></span><br><span class="line">    <span class="keyword">void</span>* _pad[<span class="number">69</span>];</span><br><span class="line">&#125; *pthread_callbacks_t;</span><br></pre></td></tr></table></figure><br><br></details>
+
+
+<p>其内部会通过系统调用，传递<code>sysCode</code>为<code>SYS_psycnh_mutexwait</code>调用</p>
+<p>解锁的流程<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * psynch_mutexdrop: This system call is used for unlock postings on contended psynch mutexes.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">int</span><br><span class="line">_psynch_mutexdrop(__unused proc_t p, user_addr_t mutex, uint32_t mgen,</span><br><span class="line">        uint32_t ugen, uint64_t tid __unused, uint32_t flags, uint32_t *retval)</span><br><span class="line">&#123;</span><br><span class="line">    int res;</span><br><span class="line">    ksyn_wait_queue_t kwq;</span><br><span class="line"></span><br><span class="line">    res = ksyn_wqfind(mutex, mgen, ugen, <span class="number">0</span>, flags, KSYN_WQTYPE_MUTEXDROP, &amp;kwq);</span><br><span class="line">    <span class="keyword">if</span> (res == <span class="number">0</span>) &#123;</span><br><span class="line">        uint32_t updateval = _psynch_mutexdrop_internal(kwq, mgen, ugen, flags);</span><br><span class="line">        <span class="comment">/* drops the kwq reference */</span></span><br><span class="line">        <span class="keyword">if</span> (retval) &#123;</span><br><span class="line">            *retval = updateval;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>通过上面的<code>pthread_functions_s</code>可以发现，<code>psynch_mutexwait</code>经由<code>XNU</code>系统调用之后，又会回到<code>pthread</code>中的<code>_psynch_mutexwait</code></p>
+<h3 id="psynch-mutexwait"><a href="#psynch-mutexwait" class="headerlink" title="_psynch_mutexwait"></a>_psynch_mutexwait</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * psynch_mutexwait: This system call is used for contended psynch mutexes to</span></span><br><span class="line"><span class="comment"> * block.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">int</span><br><span class="line">_psynch_mutexwait(__unused proc_t p, user_addr_t mutex, uint32_t mgen,</span><br><span class="line">        uint32_t ugen, uint64_t tid, uint32_t flags, uint32_t *retval)</span><br><span class="line">&#123;</span><br><span class="line">    ksyn_wait_queue_t kwq;</span><br><span class="line">    int error = <span class="number">0</span>;</span><br><span class="line">    int firstfit = (flags &amp; _PTHREAD_MTX_OPT_POLICY_MASK)</span><br><span class="line">            == _PTHREAD_MTX_OPT_POLICY_FIRSTFIT;</span><br><span class="line">    int ins_flags = SEQFIT;</span><br><span class="line">    uint32_t lseq = (mgen &amp; PTHRW_COUNT_MASK);</span><br><span class="line">    uint32_t updatebits = <span class="number">0</span>;</span><br><span class="line">    thread_t tid_th = THREAD_NULL, old_owner = THREAD_NULL;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (firstfit) &#123;</span><br><span class="line">        <span class="comment">/* first fit */</span></span><br><span class="line">        ins_flags = FIRSTFIT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    error = ksyn_wqfind(mutex, mgen, ugen, <span class="number">0</span>, flags,</span><br><span class="line">            (KSYN_WQTYPE_INWAIT | KSYN_WQTYPE_MTX), &amp;kwq);</span><br><span class="line">    <span class="keyword">if</span> (error != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> error;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">again:</span><br><span class="line">    ksyn_wqlock(kwq);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_kwq_handle_interrupted_wakeup(kwq, KWQ_INTR_WRITE, lseq, retval)) &#123;</span><br><span class="line">        old_owner = _kwq_set_owner(kwq, current_thread(), <span class="number">0</span>);</span><br><span class="line">        pthread_kern-&gt;psynch_wait_update_owner(kwq, kwq-&gt;kw_owner,</span><br><span class="line">                &amp;kwq-&gt;kw_turnstile);</span><br><span class="line">        ksyn_wqunlock(kwq);</span><br><span class="line">        _kwq_cleanup_old_owner(&amp;old_owner);</span><br><span class="line">        goto out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (kwq-&gt;kw_prepost.count &amp;&amp; (firstfit || (lseq == kwq-&gt;kw_prepost.lseq))) &#123;</span><br><span class="line">        <span class="comment">/* got preposted lock */</span></span><br><span class="line">        kwq-&gt;kw_prepost.count--;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!firstfit) &#123;</span><br><span class="line">            <span class="keyword">if</span> (kwq-&gt;kw_prepost.count &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                __FAILEDUSERTEST__(<span class="string">"psynch_mutexwait: more than one prepost\n"</span>);</span><br><span class="line">                kwq-&gt;kw_prepost.lseq += PTHRW_INC; <span class="comment">/* look for next one */</span></span><br><span class="line">                ksyn_wqunlock(kwq);</span><br><span class="line">                error = EINVAL;</span><br><span class="line">                goto out;</span><br><span class="line">            &#125;</span><br><span class="line">            _kwq_clear_preposted_wakeup(kwq);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (kwq-&gt;kw_inqueue == <span class="number">0</span>) &#123;</span><br><span class="line">            updatebits = lseq | (PTH_RWL_KBIT | PTH_RWL_EBIT);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            updatebits = (kwq-&gt;kw_highseq &amp; PTHRW_COUNT_MASK) |</span><br><span class="line">                    (PTH_RWL_KBIT | PTH_RWL_EBIT);</span><br><span class="line">        &#125;</span><br><span class="line">        updatebits &amp;= ~PTH_RWL_MTX_WAIT;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (updatebits == <span class="number">0</span>) &#123;</span><br><span class="line">            __FAILEDUSERTEST__(<span class="string">"psynch_mutexwait(prepost): returning 0 lseq in mutexwait with no EBIT \n"</span>);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        PTHREAD_TRACE(psynch_mutex_kwqprepost, kwq-&gt;kw_addr,</span><br><span class="line">                kwq-&gt;kw_prepost.lseq, kwq-&gt;kw_prepost.count, <span class="number">1</span>);</span><br><span class="line"></span><br><span class="line">        old_owner = _kwq_set_owner(kwq, current_thread(), <span class="number">0</span>);</span><br><span class="line">        pthread_kern-&gt;psynch_wait_update_owner(kwq, kwq-&gt;kw_owner,</span><br><span class="line">                &amp;kwq-&gt;kw_turnstile);</span><br><span class="line">        </span><br><span class="line">        ksyn_wqunlock(kwq);</span><br><span class="line">        _kwq_cleanup_old_owner(&amp;old_owner);</span><br><span class="line">        *retval = updatebits;</span><br><span class="line">        goto out;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// mutexwait passes in an owner hint at the time userspace contended for</span></span><br><span class="line">    <span class="comment">// the mutex, however, the owner tid in the userspace data structure may be</span></span><br><span class="line">    <span class="comment">// unset or SWITCHING (-1), or it may correspond to a stale snapshot after</span></span><br><span class="line">    <span class="comment">// the lock has subsequently been unlocked by another thread.</span></span><br><span class="line">    <span class="keyword">if</span> (tid == thread_tid(kwq-&gt;kw_owner)) &#123;</span><br><span class="line">        <span class="comment">// userspace and kernel agree</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (tid == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">// contender came in before owner could write TID</span></span><br><span class="line">        <span class="comment">// let's assume that what the kernel knows is accurate</span></span><br><span class="line">        <span class="comment">// for all we know this waiter came in late in the kernel</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (kwq-&gt;kw_lastunlockseq != PTHRW_RWL_INIT &amp;&amp;</span><br><span class="line">               is_seqlower(ugen, kwq-&gt;kw_lastunlockseq)) &#123;</span><br><span class="line">        <span class="comment">// owner is stale, someone has come in and unlocked since this</span></span><br><span class="line">        <span class="comment">// contended read the TID, so assume what is known in the kernel is</span></span><br><span class="line">        <span class="comment">// accurate</span></span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (tid == PTHREAD_MTX_TID_SWITCHING) &#123;</span><br><span class="line">        <span class="comment">// userspace didn't know the owner because it was being unlocked, but</span></span><br><span class="line">        <span class="comment">// that unlocker hasn't reached the kernel yet. So assume what is known</span></span><br><span class="line">        <span class="comment">// in the kernel is accurate</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// hint is being passed in for a specific thread, and we have no reason</span></span><br><span class="line">        <span class="comment">// not to trust it (like the kernel unlock sequence being higher)</span></span><br><span class="line">        <span class="comment">//</span></span><br><span class="line">        <span class="comment">// So resolve the hint to a thread_t if we haven't done so yet</span></span><br><span class="line">        <span class="comment">// and redrive as we dropped the lock</span></span><br><span class="line">        <span class="keyword">if</span> (tid_th == THREAD_NULL) &#123;</span><br><span class="line">            ksyn_wqunlock(kwq);</span><br><span class="line">            tid_th = pthread_kern-&gt;task_findtid(current_task(), tid);</span><br><span class="line">            <span class="keyword">if</span> (tid_th == THREAD_NULL) tid = <span class="number">0</span>;</span><br><span class="line">            goto again;</span><br><span class="line">        &#125;</span><br><span class="line">        tid_th = _kwq_set_owner(kwq, tid_th, KWQ_SET_OWNER_TRANSFER_REF);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (tid_th) &#123;</span><br><span class="line">        <span class="comment">// We are on our way to block, and can't drop the spinlock anymore</span></span><br><span class="line">        pthread_kern-&gt;thread_deallocate_safe(tid_th);</span><br><span class="line">        tid_th = THREAD_NULL;</span><br><span class="line">    &#125;</span><br><span class="line">    error = ksyn_wait(kwq, KSYN_QUEUE_WRITE, mgen, ins_flags, <span class="number">0</span>, <span class="number">0</span>,</span><br><span class="line">            psynch_mtxcontinue, kThreadWaitPThreadMutex);</span><br><span class="line">    <span class="comment">// ksyn_wait drops wait queue lock</span></span><br><span class="line">out:</span><br><span class="line">    pthread_kern-&gt;psynch_wait_cleanup();</span><br><span class="line">    ksyn_wqrelease(kwq, <span class="number">1</span>, (KSYN_WQTYPE_INWAIT | KSYN_WQTYPE_MTX));</span><br><span class="line">    <span class="keyword">if</span> (tid_th) &#123;</span><br><span class="line">        thread_deallocate(tid_th);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> error;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>核心逻辑在<code>ksyn_wait</code>，通过上面的注释，我们也能知道，走过<code>ksyn_wait</code>之后，就开始出队(drop)了。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">ksyn_wait(ksyn_wait_queue_t kwq, kwq_queue_type_t kqi, uint32_t lockseq,</span><br><span class="line">        int fit, uint64_t abstime, uint16_t kwe_flags,</span><br><span class="line">        thread_continue_t continuation, block_hint_t block_hint)</span><br><span class="line">&#123;</span><br><span class="line">    thread_t th = current_thread();</span><br><span class="line">    uthread_t uth = pthread_kern-&gt;get_bsdthread_info(th);</span><br><span class="line">    struct turnstile **tstore = NULL;</span><br><span class="line">    int res;</span><br><span class="line"></span><br><span class="line">    assert(continuation != THREAD_CONTINUE_NULL);</span><br><span class="line"></span><br><span class="line">    ksyn_waitq_element_t kwe = pthread_kern-&gt;uthread_get_uukwe(uth);</span><br><span class="line">    bzero(kwe, sizeof(*kwe));</span><br><span class="line">    kwe-&gt;kwe_count = <span class="number">1</span>;</span><br><span class="line">    kwe-&gt;kwe_lockseq = lockseq &amp; PTHRW_COUNT_MASK;</span><br><span class="line">    kwe-&gt;kwe_state = KWE_THREAD_INWAIT;</span><br><span class="line">    kwe-&gt;kwe_uth = uth;</span><br><span class="line">    kwe-&gt;kwe_thread = th;</span><br><span class="line">    kwe-&gt;kwe_flags = kwe_flags;</span><br><span class="line"></span><br><span class="line">    res = ksyn_queue_insert(kwq, kqi, kwe, lockseq, fit);</span><br><span class="line">    <span class="keyword">if</span> (res != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">//panic("psynch_rw_wrlock: failed to enqueue\n"); // XXX</span></span><br><span class="line">        ksyn_wqunlock(kwq);</span><br><span class="line">        <span class="keyword">return</span> res;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    PTHREAD_TRACE(psynch_mutex_kwqwait, kwq-&gt;kw_addr, kwq-&gt;kw_inqueue,</span><br><span class="line">            kwq-&gt;kw_prepost.count, kwq-&gt;kw_intr.count);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_kwq_use_turnstile(kwq)) &#123;</span><br><span class="line">        <span class="comment">// pthread mutexes and rwlocks both (at least sometimes) know their</span></span><br><span class="line">        <span class="comment">// owner and can use turnstiles. Otherwise, we pass NULL as the</span></span><br><span class="line">        <span class="comment">// tstore to the shims so they wait on the global waitq.</span></span><br><span class="line">        tstore = &amp;kwq-&gt;kw_turnstile;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pthread_kern-&gt;psynch_wait_prepare((uintptr_t)kwq, tstore, kwq-&gt;kw_owner,</span><br><span class="line">            block_hint, abstime);</span><br><span class="line"></span><br><span class="line">    ksyn_wqunlock(kwq);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (tstore) &#123;</span><br><span class="line">        pthread_kern-&gt;psynch_wait_update_complete(kwq-&gt;kw_turnstile);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    thread_block_parameter(continuation, kwq);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// NOT REACHED</span></span><br><span class="line">    panic(<span class="string">"ksyn_wait continuation returned"</span>);</span><br><span class="line">    __builtin_unreachable();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>pthread_kern</code>是内核扩展中注册的callback。这里会通过XNU构建一个<code>ksyn_waitq_element_t</code>，然后插入到等待队列<code>ksyn_wait_queue_t</code>中，之后开始进行等待<code>thread_block_parameter</code></p>
+<h3 id="thread-block-parameter"><a href="#thread-block-parameter" class="headerlink" title="thread_block_parameter"></a>thread_block_parameter</h3><p>该函数同样被实现在<code>XNU</code>的code&gt;sched_prim.c中。这个文件包含了mach对线程的调度方法。如：<code>thread_run</code>，<code>thread_stop</code>,<code>thread_block</code>等<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">wait_result_t</span><br><span class="line">thread_block_parameter(</span><br><span class="line">    thread_continue_t       continuation,</span><br><span class="line">    <span class="keyword">void</span>                            *parameter)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> thread_block_reason(continuation, parameter, AST_NONE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h3 id="thread-block-reason"><a href="#thread-block-reason" class="headerlink" title="thread_block_reason"></a>thread_block_reason</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> *    thread_block_reason:</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *    Forces a reschedule, blocking the caller if a wait</span></span><br><span class="line"><span class="comment"> *    has been asserted.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> *    If a continuation is specified, then thread_invoke will</span></span><br><span class="line"><span class="comment"> *    attempt to discard the thread's kernel stack.  When the</span></span><br><span class="line"><span class="comment"> *    thread resumes, it will execute the continuation function</span></span><br><span class="line"><span class="comment"> *    on a new kernel stack.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">counter(mach_counter_t  c_thread_block_calls = <span class="number">0</span>; )</span><br><span class="line"></span><br><span class="line">wait_result_t</span><br><span class="line">thread_block_reason(</span><br><span class="line">    thread_continue_t       continuation,</span><br><span class="line">    <span class="keyword">void</span>                            *parameter,</span><br><span class="line">    ast_t                           reason)</span><br><span class="line">&#123;</span><br><span class="line">    thread_t        self = current_thread();</span><br><span class="line">    processor_t     processor;</span><br><span class="line">    thread_t        new_thread;</span><br><span class="line">    spl_t           s;</span><br><span class="line"></span><br><span class="line">    counter(++c_thread_block_calls);</span><br><span class="line"></span><br><span class="line">    s = splsched();</span><br><span class="line">    <span class="comment">//获取处理器对象</span></span><br><span class="line">    processor = current_processor();</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* If we're explicitly yielding, force a subsequent quantum */</span></span><br><span class="line">    <span class="comment">//强制让出时间片</span></span><br><span class="line">    <span class="keyword">if</span> (reason &amp; AST_YIELD) &#123;</span><br><span class="line">        processor-&gt;first_timeslice = FALSE;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* We're handling all scheduling AST's */</span></span><br><span class="line">    ast_off(AST_SCHEDULING);</span><br><span class="line"></span><br><span class="line">#if PROC_REF_DEBUG</span><br><span class="line">    <span class="keyword">if</span> ((continuation != NULL) &amp;&amp; (self-&gt;task != kernel_task)) &#123;</span><br><span class="line">        <span class="keyword">if</span> (uthread_get_proc_refcount(self-&gt;uthread) != <span class="number">0</span>) &#123;</span><br><span class="line">            panic(<span class="string">"thread_block_reason with continuation uthread %p with uu_proc_refcount != 0"</span>, self-&gt;uthread);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    self-&gt;continuation = continuation;</span><br><span class="line">    self-&gt;parameter = parameter;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (self-&gt;state &amp; ~(TH_RUN | TH_IDLE)) &#123;</span><br><span class="line">        KERNEL_DEBUG_CONSTANT_IST(KDEBUG_TRACE,</span><br><span class="line">            MACHDBG_CODE(DBG_MACH_SCHED, MACH_BLOCK),</span><br><span class="line">            reason, VM_KERNEL_UNSLIDE(continuation), <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        thread_lock(self);</span><br><span class="line">        <span class="comment">//找一个新的线程执行，也有可能还是当前线程，如果是当前线程，必须是被锁的状态</span></span><br><span class="line">        new_thread = thread_select(self, processor, &amp;reason);</span><br><span class="line">        thread_unlock(self);</span><br><span class="line">    &#125; <span class="keyword">while</span> (!thread_invoke(self, new_thread, reason));</span><br><span class="line"></span><br><span class="line">    splx(s);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> self-&gt;wait_result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>thread_block_reason</code>就是让线程主动让出时间片的流程。并通过<code>thread_select</code>选择一个新的线程继续执行。</p>
+<p>接下来看一下解锁的流程。<br>同样<code>pthread_mutex_unlock</code>最终会调用下的<code>psynch_mutexdrop</code></p>
+<h3 id="pthread-mutex-t-如何实现FIFO"><a href="#pthread-mutex-t-如何实现FIFO" class="headerlink" title="pthread_mutex_t 如何实现FIFO"></a>pthread_mutex_t 如何实现FIFO</h3><p>内部会调用 <code>_psynch_mutexdrop_internal</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/* routine to drop the mutex unlocks , used both for mutexunlock system call and drop during cond wait */</span></span><br><span class="line"><span class="keyword">static</span> uint32_t</span><br><span class="line">_psynch_mutexdrop_internal(ksyn_wait_queue_t kwq, uint32_t mgen, uint32_t ugen,</span><br><span class="line">        int flags)</span><br><span class="line">&#123;</span><br><span class="line">    kern_return_t ret;</span><br><span class="line">    uint32_t returnbits = <span class="number">0</span>;</span><br><span class="line">    uint32_t updatebits = <span class="number">0</span>;</span><br><span class="line">    int firstfit = (flags &amp; _PTHREAD_MTX_OPT_POLICY_MASK) ==</span><br><span class="line">            _PTHREAD_MTX_OPT_POLICY_FIRSTFIT;</span><br><span class="line">    uint32_t nextgen = (ugen + PTHRW_INC);</span><br><span class="line">    thread_t old_owner = THREAD_NULL;</span><br><span class="line"></span><br><span class="line">    ksyn_wqlock(kwq);</span><br><span class="line">    kwq-&gt;kw_lastunlockseq = (ugen &amp; PTHRW_COUNT_MASK);</span><br><span class="line"></span><br><span class="line">redrive:</span><br><span class="line">    updatebits = (kwq-&gt;kw_highseq &amp; PTHRW_COUNT_MASK) |</span><br><span class="line">            (PTH_RWL_EBIT | PTH_RWL_KBIT);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (firstfit) &#123;</span><br><span class="line">        <span class="keyword">if</span> (kwq-&gt;kw_inqueue == <span class="number">0</span>) &#123;</span><br><span class="line">            uint32_t count = kwq-&gt;kw_prepost.count + <span class="number">1</span>;</span><br><span class="line">            <span class="comment">// Increment the number of preposters we have waiting</span></span><br><span class="line">            _kwq_mark_preposted_wakeup(kwq, count, mgen &amp; PTHRW_COUNT_MASK, <span class="number">0</span>);</span><br><span class="line">            <span class="comment">// We don't know the current owner as we've determined this mutex</span></span><br><span class="line">            <span class="comment">// drop should have a preposted locker inbound into the kernel but</span></span><br><span class="line">            <span class="comment">// we have no way of knowing who it is. When it arrives, the lock</span></span><br><span class="line">            <span class="comment">// path will update the turnstile owner and return it to userspace.</span></span><br><span class="line">            old_owner = _kwq_clear_owner(kwq);</span><br><span class="line">            pthread_kern-&gt;psynch_wait_update_owner(kwq, THREAD_NULL,</span><br><span class="line">                    &amp;kwq-&gt;kw_turnstile);</span><br><span class="line">            PTHREAD_TRACE(psynch_mutex_kwqprepost, kwq-&gt;kw_addr,</span><br><span class="line">                    kwq-&gt;kw_prepost.lseq, count, <span class="number">0</span>);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="comment">// signal first waiter</span></span><br><span class="line">            ret = ksyn_mtxsignal(kwq, NULL, updatebits, &amp;old_owner);</span><br><span class="line">            <span class="keyword">if</span> (ret == KERN_NOT_WAITING) &#123;</span><br><span class="line">                <span class="comment">// &lt;rdar://problem/39093536&gt; ksyn_mtxsignal attempts to signal</span></span><br><span class="line">                <span class="comment">// the thread but it sets up the turnstile inheritor first.</span></span><br><span class="line">                <span class="comment">// That means we can't redrive the mutex in a loop without</span></span><br><span class="line">                <span class="comment">// dropping the wq lock and cleaning up the turnstile state.</span></span><br><span class="line">                ksyn_wqunlock(kwq);</span><br><span class="line">                pthread_kern-&gt;psynch_wait_cleanup();</span><br><span class="line">                _kwq_cleanup_old_owner(&amp;old_owner);</span><br><span class="line">                ksyn_wqlock(kwq);</span><br><span class="line">                goto redrive;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;    </span><br><span class="line">        bool prepost = <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">if</span> (kwq-&gt;kw_inqueue == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// No waiters in the queue.</span></span><br><span class="line">            prepost = <span class="literal">true</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            uint32_t low_writer = (kwq-&gt;kw_ksynqueues[KSYN_QUEUE_WRITE].ksynq_firstnum &amp; PTHRW_COUNT_MASK);</span><br><span class="line">            <span class="keyword">if</span> (low_writer == nextgen) &#123;</span><br><span class="line">                <span class="comment">/* next seq to be granted found */</span></span><br><span class="line">                <span class="comment">/* since the grant could be cv, make sure mutex wait is set incase the thread interrupted out */</span></span><br><span class="line">                ret = ksyn_mtxsignal(kwq, NULL,</span><br><span class="line">                        updatebits | PTH_RWL_MTX_WAIT, &amp;old_owner);</span><br><span class="line">                <span class="keyword">if</span> (ret == KERN_NOT_WAITING) &#123;</span><br><span class="line">                    <span class="comment">/* interrupt post */</span></span><br><span class="line">                    _kwq_mark_interruped_wakeup(kwq, KWQ_INTR_WRITE, <span class="number">1</span>,</span><br><span class="line">                            nextgen, updatebits);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (is_seqhigher(low_writer, nextgen)) &#123;</span><br><span class="line">                prepost = <span class="literal">true</span>;</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                <span class="comment">//__FAILEDUSERTEST__("psynch_mutexdrop_internal: FS mutex unlock sequence higher than the lowest one is queue\n");</span></span><br><span class="line">                ksyn_waitq_element_t kwe;</span><br><span class="line">                kwe = ksyn_queue_find_seq(kwq,</span><br><span class="line">                        &amp;kwq-&gt;kw_ksynqueues[KSYN_QUEUE_WRITE], nextgen);</span><br><span class="line">                <span class="keyword">if</span> (kwe != NULL) &#123;</span><br><span class="line">                    <span class="comment">/* next seq to be granted found */</span></span><br><span class="line">                    <span class="comment">/* since the grant could be cv, make sure mutex wait is set incase the thread interrupted out */</span></span><br><span class="line">                    ret = ksyn_mtxsignal(kwq, kwe,</span><br><span class="line">                            updatebits | PTH_RWL_MTX_WAIT, &amp;old_owner);</span><br><span class="line">                    <span class="keyword">if</span> (ret == KERN_NOT_WAITING) &#123;</span><br><span class="line">                        goto redrive;</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    prepost = <span class="literal">true</span>;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (prepost) &#123;</span><br><span class="line">            <span class="keyword">if</span> (kwq-&gt;kw_prepost.count != <span class="number">0</span>) &#123;</span><br><span class="line">                __FAILEDUSERTEST__(<span class="string">"_psynch_mutexdrop_internal: multiple preposts\n"</span>);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                _kwq_mark_preposted_wakeup(kwq, <span class="number">1</span>, nextgen &amp; PTHRW_COUNT_MASK,</span><br><span class="line">                        <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            old_owner = _kwq_clear_owner(kwq);</span><br><span class="line">            pthread_kern-&gt;psynch_wait_update_owner(kwq, THREAD_NULL,</span><br><span class="line">                    &amp;kwq-&gt;kw_turnstile);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ksyn_wqunlock(kwq);</span><br><span class="line">    pthread_kern-&gt;psynch_wait_cleanup();</span><br><span class="line">    _kwq_cleanup_old_owner(&amp;old_owner);</span><br><span class="line">    ksyn_wqrelease(kwq, <span class="number">1</span>, KSYN_WQTYPE_MUTEXDROP);</span><br><span class="line">    <span class="keyword">return</span> returnbits;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先系统会维护维护一个全局的等待队列<code>ksyn_wait_queue</code>，在每一个线程执行<code>unlock</code>后，会寻找这个队列的第一个节点，让这个节点获得锁。从而实现FIFO的特性，这也是为什么<code>mutex(公平锁)</code>会比<code>mutex(公平锁)</code>的主要原因。</p>
+<h3 id="mutex-总结"><a href="#mutex-总结" class="headerlink" title="mutex 总结"></a>mutex 总结</h3><ol>
+<li>通过内核扩展注入pthread的操作函数和回调函数。 </li>
+<li>pthread_mutex_t 是由bsd实现的互斥锁，通过结构体内部的options中维护lockcount 实现递归。</li>
+<li>加锁时，通过系统调用进行内核交互(进入内核态)。<ol>
+<li>构建<code>ksyn_waitq_element_t</code>。</li>
+<li>将<code>kwe</code>放入等待队列<code>ksyn_wait_queue_t</code>。</li>
+<li>调用<code>ksyn_wait</code>进入<code>thread_block_parameter</code>。</li>
+<li>使当前线程主动让出时间片，并调用<code>thread_select</code>选择一个新的线程执行。</li>
+</ol>
+</li>
+<li>解锁时从<code>ksyn_wait_queue_t</code>的头部获取一个队列执行。</li>
+</ol>
+<h2 id="unfair-lock"><a href="#unfair-lock" class="headerlink" title="unfair_lock"></a>unfair_lock</h2><p>同样的来看一组调用栈<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/222333.png" alt="img"><br>os_unfair_lock_lock被定义在libplatform中。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">os_unfair_lock_lock(os_unfair_lock_t lock)</span><br><span class="line">&#123;</span><br><span class="line">    _os_unfair_lock_t l = (_os_unfair_lock_t)lock;</span><br><span class="line">    os_lock_owner_t self = _os_lock_owner_get_self();</span><br><span class="line">    bool r = os_atomic_cmpxchg2o(l, oul_value, OS_LOCK_NO_OWNER, self, acquire);</span><br><span class="line">    <span class="keyword">if</span> (likely(r)) <span class="keyword">return</span>;</span><br><span class="line">    <span class="keyword">return</span> _os_unfair_lock_lock_slow(l, self, OS_UNFAIR_LOCK_NONE);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>内部直接调用<code>_os_unfair_lock_lock_slow</code></p>
+<h3 id="os-unfair-lock-lock-slow"><a href="#os-unfair-lock-lock-slow" class="headerlink" title="_os_unfair_lock_lock_slow"></a>_os_unfair_lock_lock_slow</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">OS_NOINLINE</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_os_unfair_lock_lock_slow(_os_unfair_lock_t l, os_lock_owner_t self,</span><br><span class="line">        os_unfair_lock_options_t options)</span><br><span class="line">&#123;</span><br><span class="line">    os_unfair_lock_options_t allow_anonymous_owner =</span><br><span class="line">            options &amp; OS_UNFAIR_LOCK_ALLOW_ANONYMOUS_OWNER;</span><br><span class="line">    options &amp;= ~OS_UNFAIR_LOCK_ALLOW_ANONYMOUS_OWNER;</span><br><span class="line">    <span class="keyword">if</span> (unlikely(options &amp; ~OS_UNFAIR_LOCK_OPTIONS_MASK)) &#123;</span><br><span class="line">        __LIBPLATFORM_CLIENT_CRASH__(options, <span class="string">"Invalid options"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    os_ulock_value_t current, <span class="keyword">new</span>, waiters_mask = <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">while</span> (unlikely((current = os_atomic_load2o(l, oul_value, relaxed)) !=</span><br><span class="line">            OS_LOCK_NO_OWNER)) &#123;</span><br><span class="line">_retry:</span><br><span class="line">        <span class="comment">//死锁检测</span></span><br><span class="line">        <span class="keyword">if</span> (unlikely(OS_ULOCK_IS_OWNER(current, self, allow_anonymous_owner))) &#123;</span><br><span class="line">            <span class="keyword">return</span> _os_unfair_lock_recursive_abort(self);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">new</span> = current &amp; ~OS_ULOCK_NOWAITERS_BIT;</span><br><span class="line">        <span class="keyword">if</span> (current != <span class="keyword">new</span>) &#123;</span><br><span class="line">            <span class="comment">// Clear nowaiters bit in lock value before waiting</span></span><br><span class="line">            <span class="keyword">if</span> (!os_atomic_cmpxchgv2o(l, oul_value, current, <span class="keyword">new</span>, &amp;current,</span><br><span class="line">                    relaxed))&#123;</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            current = <span class="keyword">new</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">//调用XNU等待</span></span><br><span class="line">        int ret = __ulock_wait(UL_UNFAIR_LOCK | ULF_NO_ERRNO | options,</span><br><span class="line">                l, current, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (unlikely(ret &lt; <span class="number">0</span>)) &#123;</span><br><span class="line">            <span class="keyword">switch</span> (-ret) &#123;</span><br><span class="line">            <span class="keyword">case</span> EINTR:</span><br><span class="line">            <span class="keyword">case</span> EFAULT:</span><br><span class="line">                <span class="keyword">continue</span>;</span><br><span class="line">            <span class="keyword">case</span> EOWNERDEAD:</span><br><span class="line">                _os_unfair_lock_corruption_abort(current);</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            <span class="keyword">default</span>:</span><br><span class="line">                __LIBPLATFORM_INTERNAL_CRASH__(-ret, <span class="string">"ulock_wait failure"</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (ret &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// If there are more waiters, unset nowaiters bit when acquiring lock</span></span><br><span class="line">            waiters_mask = OS_ULOCK_NOWAITERS_BIT;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">new</span> = self &amp; ~waiters_mask;</span><br><span class="line">    bool r = os_atomic_cmpxchgv2o(l, oul_value, OS_LOCK_NO_OWNER, <span class="keyword">new</span>,</span><br><span class="line">            &amp;current, acquire);</span><br><span class="line">    <span class="keyword">if</span> (unlikely(!r)) goto _retry;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里也可以看出<code>os_unfair_lock</code>是不支持递归的，接下来会进行系统调用<code>__ulock_wait</code>,</p>
+<h3 id="ulock-wait"><a href="#ulock-wait" class="headerlink" title="ulock_wait"></a>ulock_wait</h3><p><code>ulock_wait</code>的实现在XNU中<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">ulock_wait(struct proc *p, struct ulock_wait_args *args, int32_t *retval)</span><br><span class="line">&#123;</span><br><span class="line">    uint opcode = args-&gt;operation &amp; UL_OPCODE_MASK;</span><br><span class="line">    uint flags = args-&gt;operation &amp; UL_FLAGS_MASK;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (flags &amp; ULF_WAIT_CANCEL_POINT) &#123;</span><br><span class="line">        __pthread_testcancel(<span class="number">1</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int ret = <span class="number">0</span>;</span><br><span class="line">    thread_t self = current_thread();</span><br><span class="line">    ulk_t key;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* involved threads - each variable holds +1 ref if not null */</span></span><br><span class="line">    thread_t owner_thread   = THREAD_NULL;</span><br><span class="line">    thread_t old_owner      = THREAD_NULL;</span><br><span class="line"></span><br><span class="line">    ull_t *unused_ull = NULL;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((flags &amp; ULF_WAIT_MASK) != flags) &#123;</span><br><span class="line">        ret = EINVAL;</span><br><span class="line">        goto munge_retval;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    bool set_owner = <span class="literal">false</span>;</span><br><span class="line">    bool xproc = <span class="literal">false</span>;</span><br><span class="line">    size_t lock_size = sizeof(uint32_t);</span><br><span class="line">    int copy_ret;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (opcode) &#123;</span><br><span class="line">    <span class="keyword">case</span> UL_UNFAIR_LOCK:</span><br><span class="line">        set_owner = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> UL_COMPARE_AND_WAIT:</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> UL_COMPARE_AND_WAIT64:</span><br><span class="line">        lock_size = sizeof(uint64_t);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> UL_COMPARE_AND_WAIT_SHARED:</span><br><span class="line">        xproc = <span class="literal">true</span>;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> UL_COMPARE_AND_WAIT64_SHARED:</span><br><span class="line">        xproc = <span class="literal">true</span>;</span><br><span class="line">        lock_size = sizeof(uint64_t);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        ret = EINVAL;</span><br><span class="line">        goto munge_retval;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    uint64_t value = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((args-&gt;addr == <span class="number">0</span>) || (args-&gt;addr &amp; (lock_size - <span class="number">1</span>))) &#123;</span><br><span class="line">        ret = EINVAL;</span><br><span class="line">        goto munge_retval;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (xproc) &#123;</span><br><span class="line">        uint64_t object = <span class="number">0</span>;</span><br><span class="line">        uint64_t offset = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">        ret = uaddr_findobj(args-&gt;addr, &amp;object, &amp;offset);</span><br><span class="line">        <span class="keyword">if</span> (ret) &#123;</span><br><span class="line">            ret = EINVAL;</span><br><span class="line">            goto munge_retval;</span><br><span class="line">        &#125;</span><br><span class="line">        key.ulk_key_type = ULK_XPROC;</span><br><span class="line">        key.ulk_object = object;</span><br><span class="line">        key.ulk_offset = offset;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        key.ulk_key_type = ULK_UADDR;</span><br><span class="line">        key.ulk_pid = p-&gt;p_pid;</span><br><span class="line">        key.ulk_addr = args-&gt;addr;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((flags &amp; ULF_WAIT_ADAPTIVE_SPIN) &amp;&amp; set_owner) &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Attempt the copyin outside of the lock once,</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * If it doesn't match (which is common), return right away.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * If it matches, resolve the current owner, and if it is on core,</span></span><br><span class="line"><span class="comment">         * spin a bit waiting for the value to change. If the owner isn't on</span></span><br><span class="line"><span class="comment">         * core, or if the value stays stable, then go on with the regular</span></span><br><span class="line"><span class="comment">         * blocking code.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        uint64_t end = <span class="number">0</span>;</span><br><span class="line">        uint32_t u32;</span><br><span class="line"></span><br><span class="line">        ret = copyin_atomic32(args-&gt;addr, &amp;u32);</span><br><span class="line">        <span class="keyword">if</span> (ret || u32 != args-&gt;value) &#123;</span><br><span class="line">            goto munge_retval;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">for</span> (;;) &#123;</span><br><span class="line">            <span class="keyword">if</span> (owner_thread == NULL &amp;&amp; ulock_resolve_owner(u32, &amp;owner_thread) != <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="comment">/* owner_thread may have a +1 starting here */</span></span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (!machine_thread_on_core(owner_thread)) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (end == <span class="number">0</span>) &#123;</span><br><span class="line">                clock_interval_to_deadline(ulock_adaptive_spin_usecs,</span><br><span class="line">                    NSEC_PER_USEC, &amp;end);</span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (mach_absolute_time() &gt; end) &#123;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="keyword">if</span> (copyin_atomic32_wait_if_equals(args-&gt;addr, u32) != <span class="number">0</span>) &#123;</span><br><span class="line">                goto munge_retval;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ull_t *ull = ull_get(&amp;key, <span class="number">0</span>, &amp;unused_ull);</span><br><span class="line">    <span class="keyword">if</span> (ull == NULL) &#123;</span><br><span class="line">        ret = ENOMEM;</span><br><span class="line">        goto munge_retval;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">/* ull is locked */</span></span><br><span class="line"></span><br><span class="line">    ull-&gt;ull_nwaiters++;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (ull-&gt;ull_opcode == <span class="number">0</span>) &#123;</span><br><span class="line">        ull-&gt;ull_opcode = opcode;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (ull-&gt;ull_opcode != opcode) &#123;</span><br><span class="line">        ret = EDOM;</span><br><span class="line">        goto out_locked;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * We don't want this copyin to get wedged behind VM operations,</span></span><br><span class="line"><span class="comment">     * but we have to read the userspace value under the ull lock for correctness.</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * Until &lt;rdar://problem/24999882&gt; exists,</span></span><br><span class="line"><span class="comment">     * holding the ull spinlock across copyin forces any</span></span><br><span class="line"><span class="comment">     * vm_fault we encounter to fail.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* copyin_atomicXX always checks alignment */</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (lock_size == <span class="number">4</span>) &#123;</span><br><span class="line">        uint32_t u32;</span><br><span class="line">        copy_ret = copyin_atomic32(args-&gt;addr, &amp;u32);</span><br><span class="line">        value = u32;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        copy_ret = copyin_atomic64(args-&gt;addr, &amp;value);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">#if DEVELOPMENT || DEBUG</span><br><span class="line">    <span class="comment">/* Occasionally simulate copyin finding the user address paged out */</span></span><br><span class="line">    <span class="keyword">if</span> (((ull_simulate_copyin_fault == p-&gt;p_pid) || (ull_simulate_copyin_fault == <span class="number">1</span>)) &amp;&amp; (copy_ret == <span class="number">0</span>)) &#123;</span><br><span class="line">        <span class="keyword">static</span> _Atomic int fault_inject = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> (os_atomic_inc_orig(&amp;fault_inject, relaxed) % <span class="number">73</span> == <span class="number">0</span>) &#123;</span><br><span class="line">            copy_ret = EFAULT;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br><span class="line">    <span class="keyword">if</span> (copy_ret != <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="comment">/* copyin() will return an error if the access to the user addr would have faulted,</span></span><br><span class="line"><span class="comment">         * so just return and let the user level code fault it in.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        ret = copy_ret;</span><br><span class="line">        goto out_locked;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (value != args-&gt;value) &#123;</span><br><span class="line">        <span class="comment">/* Lock value has changed from expected so bail out */</span></span><br><span class="line">        goto out_locked;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (set_owner) &#123;</span><br><span class="line">        <span class="keyword">if</span> (owner_thread == THREAD_NULL) &#123;</span><br><span class="line">            ret = ulock_resolve_owner(args-&gt;value, &amp;owner_thread);</span><br><span class="line">            <span class="keyword">if</span> (ret == EOWNERDEAD) &#123;</span><br><span class="line">                <span class="comment">/*</span></span><br><span class="line"><span class="comment">                 * Translation failed - even though the lock value is up to date,</span></span><br><span class="line"><span class="comment">                 * whatever was stored in the lock wasn't actually a thread port.</span></span><br><span class="line"><span class="comment">                 */</span></span><br><span class="line">                goto out_locked;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">/* HACK: don't bail on MACH_PORT_DEAD, to avoid blowing up the no-tsd pthread lock */</span></span><br><span class="line">            ret = <span class="number">0</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* owner_thread has a +1 reference */</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * At this point, I know:</span></span><br><span class="line"><span class="comment">         * a) owner_thread is definitely the current owner, because I just read the value</span></span><br><span class="line"><span class="comment">         * b) owner_thread is either:</span></span><br><span class="line"><span class="comment">         *      i) holding the user lock or</span></span><br><span class="line"><span class="comment">         *      ii) has just unlocked the user lock after I looked</span></span><br><span class="line"><span class="comment">         *              and is heading toward the kernel to call ull_wake.</span></span><br><span class="line"><span class="comment">         *              If so, it's going to have to wait for the ull mutex.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * Therefore, I can ask the turnstile to promote its priority, and I can rely</span></span><br><span class="line"><span class="comment">         * on it to come by later to issue the wakeup and lose its promotion.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Return the +1 ref from the ull_owner field */</span></span><br><span class="line">        old_owner = ull-&gt;ull_owner;</span><br><span class="line">        ull-&gt;ull_owner = THREAD_NULL;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (owner_thread != THREAD_NULL) &#123;</span><br><span class="line">            <span class="comment">/* The ull_owner field now owns a +1 ref on owner_thread */</span></span><br><span class="line">            thread_reference(owner_thread);</span><br><span class="line">            ull-&gt;ull_owner = owner_thread;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    wait_result_t wr;</span><br><span class="line">    uint32_t timeout = args-&gt;timeout;</span><br><span class="line">    uint64_t deadline = TIMEOUT_WAIT_FOREVER;</span><br><span class="line">    wait_interrupt_t interruptible = THREAD_ABORTSAFE;</span><br><span class="line">    struct turnstile *ts;</span><br><span class="line"></span><br><span class="line">    ts = turnstile_prepare((uintptr_t)ull, &amp;ull-&gt;ull_turnstile,</span><br><span class="line">        TURNSTILE_NULL, TURNSTILE_ULOCK);</span><br><span class="line">    thread_set_pending_block_hint(self, kThreadWaitUserLock);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (flags &amp; ULF_WAIT_WORKQ_DATA_CONTENTION) &#123;</span><br><span class="line">        interruptible |= THREAD_WAIT_NOREPORT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (timeout) &#123;</span><br><span class="line">        clock_interval_to_deadline(timeout, NSEC_PER_USEC, &amp;deadline);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    turnstile_update_inheritor(ts, owner_thread,</span><br><span class="line">        (TURNSTILE_DELAYED_UPDATE | TURNSTILE_INHERITOR_THREAD));</span><br><span class="line"></span><br><span class="line">    wr = waitq_assert_wait64(&amp;ts-&gt;ts_waitq, CAST_EVENT64_T(ULOCK_TO_EVENT(ull)),</span><br><span class="line">        interruptible, deadline);</span><br><span class="line"></span><br><span class="line">    ull_unlock(ull);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (unused_ull) &#123;</span><br><span class="line">        ull_free(unused_ull);</span><br><span class="line">        unused_ull = NULL;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    turnstile_update_inheritor_complete(ts, TURNSTILE_INTERLOCK_NOT_HELD);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (wr == THREAD_WAITING) &#123;</span><br><span class="line">        uthread_t uthread = (uthread_t)get_bsdthread_info(self);</span><br><span class="line">        uthread-&gt;uu_save.uus_ulock_wait_data.retval = retval;</span><br><span class="line">        uthread-&gt;uu_save.uus_ulock_wait_data.flags = flags;</span><br><span class="line">        uthread-&gt;uu_save.uus_ulock_wait_data.owner_thread = owner_thread;</span><br><span class="line">        uthread-&gt;uu_save.uus_ulock_wait_data.old_owner = old_owner;</span><br><span class="line">        <span class="keyword">if</span> (set_owner &amp;&amp; owner_thread != THREAD_NULL) &#123;</span><br><span class="line">            thread_handoff_parameter(owner_thread, ulock_wait_continue, ull);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            assert(owner_thread == THREAD_NULL);</span><br><span class="line">            thread_block_parameter(ulock_wait_continue, ull);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">/* NOT REACHED */</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ret = wait_result_to_return_code(wr);</span><br><span class="line"></span><br><span class="line">    ull_lock(ull);</span><br><span class="line">    turnstile_complete((uintptr_t)ull, &amp;ull-&gt;ull_turnstile, NULL, TURNSTILE_ULOCK);</span><br><span class="line"></span><br><span class="line">out_locked:</span><br><span class="line">    ulock_wait_cleanup(ull, owner_thread, old_owner, retval);</span><br><span class="line">    owner_thread = NULL;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (unused_ull) &#123;</span><br><span class="line">        ull_free(unused_ull);</span><br><span class="line">        unused_ull = NULL;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    assert(*retval &gt;= <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">munge_retval:</span><br><span class="line">    <span class="keyword">if</span> (owner_thread) &#123;</span><br><span class="line">        thread_deallocate(owner_thread);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (ret == ESTALE) &#123;</span><br><span class="line">        ret = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> ((flags &amp; ULF_NO_ERRNO) &amp;&amp; (ret != <span class="number">0</span>)) &#123;</span><br><span class="line">        *retval = -ret;</span><br><span class="line">        ret = <span class="number">0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> ret;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里我们有看到了熟悉的<code>thread_block_reason</code>函数。</p>
+<p>我们看到<code>os_unfair_lock</code>的是直接依赖CPU的调度执行的，来看下面的调用栈。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/lock/2EC6DC95-213A-46F1-9F0A-5E3483DBAB69.png" alt="img"></p>
+<h3 id="os-unfair-lock-总结"><a href="#os-unfair-lock-总结" class="headerlink" title="os_unfair_lock 总结"></a>os_unfair_lock 总结</h3><p>作为非公平锁的实现，<code>os_unfair_lock</code>直接有CPU来调度，不会像<code>mutex</code>那样保证等待队列的出列顺序，也就减少了线程切换的资源消耗。  </p>
+<p>对比 <code>mutex</code>：<br>优点：</p>
+<ul>
+<li>申请锁的内存消耗更少，<code>os_unfair_lock</code>为int32，而<code>mutex</code>的结构体显然比<code>os_unfair_lock</code>大</li>
+<li>减少由于要保持队列顺序，而产生线程上下文切换带来的消耗。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>无法保证被锁住线程的执行顺序。很可能会出现某个线程长时间不会执行的情况</li>
+</ul>
+<h2 id="锁的使用场景"><a href="#锁的使用场景" class="headerlink" title="锁的使用场景"></a>锁的使用场景</h2><ul>
+<li>当每个锁的开销很重要时（比如会申请大量的锁），并且不需要在乎任务的执行顺序。就选<code>os_unfair_lock</code>吧。</li>
+<li>DispatchQueue的同步前文已经分析过了。他使用起来非常方便。而且苹果主推(你懂得)。对于同步和锁的控制也相当简单。GCD应该作为同步手段的默认选项。</li>
+<li><code>pthread_mutex</code> 就处在上面两者的选择中间，如果想保证线程的执行顺序，以及想其他递归，条件等功能。可以选择mutex</li>
+</ul>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/03/07/GCD之同步与组/" rel="next" title="GCD之同步与组">
+                <i class="fa fa-chevron-left"></i> GCD之同步与组
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/04/21/编译启动系列文章之xcode-build/" rel="prev" title="从编译到启动">
+                从编译到启动 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">1.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#公平锁"><span class="nav-number">1.1.</span> <span class="nav-text">公平锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#非公平锁"><span class="nav-number">1.2.</span> <span class="nav-text">非公平锁</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#汇编"><span class="nav-number">1.3.</span> <span class="nav-text">汇编</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#锁的实现"><span class="nav-number">2.</span> <span class="nav-text">锁的实现</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#示例代码"><span class="nav-number">2.1.</span> <span class="nav-text">示例代码</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#pthread-mutex-t"><span class="nav-number">3.</span> <span class="nav-text">pthread_mutex_t</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-mutex-t-如何实现递归"><span class="nav-number">3.1.</span> <span class="nav-text">pthread_mutex_t 如何实现递归</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-functions-t"><span class="nav-number">3.2.</span> <span class="nav-text">pthread_functions_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-callbacks-t"><span class="nav-number">3.3.</span> <span class="nav-text">pthread_callbacks_t</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#psynch-mutexwait"><span class="nav-number">3.4.</span> <span class="nav-text">_psynch_mutexwait</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#thread-block-parameter"><span class="nav-number">3.5.</span> <span class="nav-text">thread_block_parameter</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#thread-block-reason"><span class="nav-number">3.6.</span> <span class="nav-text">thread_block_reason</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-mutex-t-如何实现FIFO"><span class="nav-number">3.7.</span> <span class="nav-text">pthread_mutex_t 如何实现FIFO</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#mutex-总结"><span class="nav-number">3.8.</span> <span class="nav-text">mutex 总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#unfair-lock"><span class="nav-number">4.</span> <span class="nav-text">unfair_lock</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#os-unfair-lock-lock-slow"><span class="nav-number">4.1.</span> <span class="nav-text">_os_unfair_lock_lock_slow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ulock-wait"><span class="nav-number">4.2.</span> <span class="nav-text">ulock_wait</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#os-unfair-lock-总结"><span class="nav-number">4.3.</span> <span class="nav-text">os_unfair_lock 总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#锁的使用场景"><span class="nav-number">5.</span> <span class="nav-text">锁的使用场景</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

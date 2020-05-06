@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="GCD系列 文章之概念向，本文结合开发文档等相关书记来介绍GCD的概念及数据结构，在后面的文章会写实现原理">
+<meta name="keywords" content="GCD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCD之数据结构及概念向">
+<meta property="og:url" content="http://yfeii.github.io/2020/02/26/GCD之数据结构及概念向/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="GCD系列 文章之概念向，本文结合开发文档等相关书记来介绍GCD的概念及数据结构，在后面的文章会写实现原理">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/CC08B3F4-CDD6-4132-948C-B234652C9165.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/EF48EE6D-432E-402B-8727-32C18E9B28A7.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/CC08B3F4-CDD6-4132-948C-B234652C9165.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/3BCFA882-0E19-4760-97BF-364DE94468C9.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/677AA08B-6A77-4A1B-9AB9-8CBFE94C59C8.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/45380D3A-692C-4E61-BB2F-D3CC4213E5FC.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/96E20881C928BFCCB00A1A9FBA0FA966.jpg">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/7469FAB4-E3B2-4702-A1FC-47005E624FF5.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/DCA741E4-1507-414D-8F20-B35DD0915440.png">
+<meta property="og:updated_time" content="2020-03-10T14:42:18.404Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCD之数据结构及概念向">
+<meta name="twitter:description" content="GCD系列 文章之概念向，本文结合开发文档等相关书记来介绍GCD的概念及数据结构，在后面的文章会写实现原理">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/CC08B3F4-CDD6-4132-948C-B234652C9165.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2020/02/26/GCD之数据结构及概念向/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>GCD之数据结构及概念向 | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2020/02/26/GCD之数据结构及概念向/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD之数据结构及概念向
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-26 09:40:25" itemprop="dateCreated datePublished" datetime="2020-02-26T09:40:25+08:00">2020-02-26</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-03-10 22:42:18" itemprop="dateModified" datetime="2020-03-10T22:42:18+08:00">2020-03-10</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/多线程/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>GCD系列 文章之概念向，本文结合开发文档等相关书记来介绍GCD的概念及数据结构，在后面的文章会写实现原理<a id="more"></a></p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>源码及版本号。所有源码均在苹果开源官网下可<a href="https://opensource.apple.com/" target="_blank" rel="noopener">下载</a><br>源码 | 版本<br>-|-<br>libdispatch | 1008.250.7<br>libpthread | 330.250.2<br>xnu | 6153.11.26</p>
+<h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><h3 id="进程"><a href="#进程" class="headerlink" title="进程"></a>进程</h3><p>进程是过去时代的产物。现代操作系统，包括OSX和iOS，都只面对线程进行调度。苹果比其他操作系统提供了更为丰富的操作多线程的API，从这个角度来看，它比其他操作系统高了几个档次。</p>
+<p>最初，UNIX被设计为一个多进程的操作系统。进程是系统执行的基本单元，而且是执行过程中所需要的各种资源的容器，这些资源包括：虚拟内存、文件描述符以及其他各种对象。开发者编写顺序程序，从入口点<code>main</code>开始执行直到<code>main</code>函数返回，执行过程是序列化的，容易理解。</p>
+<p>然而，这种方法很快被证明太刻板，对于需要并发执行的任务来说灵活性太低。另一个原因是大部分进程早晚都会在I/O上阻塞，I/O操作意味着进程时间片中大部分都放弃了。这对性能有很大的影响，因为进程上下文切换的开销很大。</p>
+<h3 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h3><p>线程，作为最大化利用进程时间片的方法，应运而生：通过使用多个线程，程序的执行可以分割为表面看上去并发执行的子任务。如果一个子任务发生了阻寒，那么剩下的时间片可以分配给另一个于任务。</p>
+<p>而CPU当时的发展却是有限的，即使是多线程的代码，一次也只能运行一个线程。进程中线程的抢占开销比多任务系统对进程抢占的开销要小。因此，从这个角度看，大部分操作系统开始将调度策略从进程转移到线程是有意义的。线程之间切换的开销比较小一一只需要保存和恢复寄存器即可。而相比起来进程的切换还需要切换虚拟内存空间，其中包含很多底层的开销，例如清空cache和TLB(TransIation Lookaside Buffer).</p>
+<p>随着多处理器架构，特别是多核处理器架构的出现，线程焕发了新的生机。突然间，两个线程可以真正地同时运行了。多核处理器史是特别适合线程，因为多个处理器核心共享同样的cache和RAM,这为线程之间的共享虚拟内存提供了基础。相比之下，多处理器架构可能会因为非一致的内存架构和cache一致性方面的原因而损失一些性能。</p>
+<h3 id="Mach线程定义"><a href="#Mach线程定义" class="headerlink" title="Mach线程定义"></a>Mach线程定义</h3><p>线程定义了<code>Mach</code>中最小的执行单元，线程表示的是底层的机器寄存器c状态以及各种调度统计数据，线程的定义在<xnu thread.h>中，线程从设计上提供了调度所需要的大量信息，同时又尽可能的维持最小开销</xnu></p>
+<details><br><summary>thread</summary><br><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br><span class="line">426</span><br><span class="line">427</span><br><span class="line">428</span><br><span class="line">429</span><br><span class="line">430</span><br><span class="line">431</span><br><span class="line">432</span><br><span class="line">433</span><br><span class="line">434</span><br><span class="line">435</span><br><span class="line">436</span><br><span class="line">437</span><br><span class="line">438</span><br><span class="line">439</span><br><span class="line">440</span><br><span class="line">441</span><br><span class="line">442</span><br><span class="line">443</span><br><span class="line">444</span><br><span class="line">445</span><br><span class="line">446</span><br><span class="line">447</span><br><span class="line">448</span><br><span class="line">449</span><br><span class="line">450</span><br><span class="line">451</span><br><span class="line">452</span><br><span class="line">453</span><br><span class="line">454</span><br><span class="line">455</span><br><span class="line">456</span><br><span class="line">457</span><br><span class="line">458</span><br><span class="line">459</span><br><span class="line">460</span><br><span class="line">461</span><br><span class="line">462</span><br><span class="line">463</span><br><span class="line">464</span><br></pre></td><td class="code"><pre><span class="line">struct thread &#123;</span><br><span class="line">#if MACH_ASSERT</span><br><span class="line">#define THREAD_MAGIC 0x1234ABCDDCBA4321ULL</span><br><span class="line">    <span class="comment">/* Ensure nothing uses &amp;thread as a queue entry */</span></span><br><span class="line">    uint64_t                thread_magic;</span><br><span class="line">#endif /* MACH_ASSERT */</span><br><span class="line"></span><br><span class="line">  </span><br><span class="line">    union &#123;</span><br><span class="line">        queue_chain_t                   runq_links;             <span class="comment">/* run queue links */</span></span><br><span class="line">        queue_chain_t                   wait_links;             <span class="comment">/* wait queue links */</span></span><br><span class="line">        struct mpsc_queue_chain         mpsc_links;             <span class="comment">/* thread daemon mpsc links */</span></span><br><span class="line">        struct priority_queue_entry     wait_prioq_links;       <span class="comment">/* priority ordered waitq links */</span></span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    processor_t             runq;           <span class="comment">/* run queue assignment */</span></span><br><span class="line"></span><br><span class="line">    event64_t               wait_event;     <span class="comment">/* wait queue event */</span></span><br><span class="line">    struct waitq           *waitq;          <span class="comment">/* wait queue this thread is enqueued on */</span></span><br><span class="line">    struct turnstile       *turnstile;      <span class="comment">/* thread's turnstile, protected by primitives interlock */</span></span><br><span class="line">    <span class="keyword">void</span>                   *inheritor;      <span class="comment">/* inheritor of the primitive the thread will block on */</span></span><br><span class="line">    struct priority_queue  sched_inheritor_queue; <span class="comment">/* Inheritor queue for kernel promotion */</span></span><br><span class="line">    struct priority_queue  base_inheritor_queue; <span class="comment">/* Inheritor queue for user promotion */</span></span><br><span class="line"></span><br><span class="line">#if CONFIG_SCHED_CLUTCH</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * In the clutch scheduler, the threads are maintained in runqs at the clutch_bucket</span></span><br><span class="line"><span class="comment">     * level (clutch_bucket defines a unique thread group and scheduling bucket pair). In</span></span><br><span class="line"><span class="comment">     * order to determine the priority of the clutch bucket as a whole, it is necessary to</span></span><br><span class="line"><span class="comment">     * find the highest thread in it. The thread could be present in the clutch bucket due</span></span><br><span class="line"><span class="comment">     * to its base_pri or its promoted pri. This link is used to maintain that queue.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    struct priority_queue_entry sched_clutchpri_link;</span><br><span class="line"></span><br><span class="line">#endif /* CONFIG_SCHED_CLUTCH */</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Data updated during assert_wait/thread_wakeup */</span></span><br><span class="line">#if __SMP__</span><br><span class="line">    decl_simple_lock_data(, sched_lock);     <span class="comment">/* scheduling lock (thread_lock()) */</span></span><br><span class="line">    decl_simple_lock_data(, wake_lock);      <span class="comment">/* for thread stop / wait (wake_lock()) */</span></span><br><span class="line">#endif</span><br><span class="line">    integer_t               options;                        <span class="comment">/* options set by thread itself */</span></span><br><span class="line">#define TH_OPT_INTMASK          0x0003          /* interrupt / abort level */</span><br><span class="line">#define TH_OPT_VMPRIV           0x0004          /* may allocate reserved memory */</span><br><span class="line">#define TH_OPT_SYSTEM_CRITICAL  0x0010          /* Thread must always be allowed to run - even under heavy load */</span><br><span class="line">#define TH_OPT_PROC_CPULIMIT    0x0020          /* Thread has a task-wide CPU limit applied to it */</span><br><span class="line">#define TH_OPT_PRVT_CPULIMIT    0x0040          /* Thread has a thread-private CPU limit applied to it */</span><br><span class="line">#define TH_OPT_IDLE_THREAD      0x0080          /* Thread is a per-processor idle thread */</span><br><span class="line">#define TH_OPT_GLOBAL_FORCED_IDLE       0x0100  /* Thread performs forced idle for thermal control */</span><br><span class="line">#define TH_OPT_SCHED_VM_GROUP   0x0200          /* Thread belongs to special scheduler VM group */</span><br><span class="line">#define TH_OPT_HONOR_QLIMIT     0x0400          /* Thread will honor qlimit while sending mach_msg, regardless of MACH_SEND_ALWAYS */</span><br><span class="line">#define TH_OPT_SEND_IMPORTANCE  0x0800          /* Thread will allow importance donation from kernel rpc */</span><br><span class="line">#define TH_OPT_ZONE_GC          0x1000          /* zone_gc() called on this thread */</span><br><span class="line"></span><br><span class="line">    boolean_t                       wake_active;    <span class="comment">/* wake event on stop */</span></span><br><span class="line">    int                                     at_safe_point;  <span class="comment">/* thread_abort_safely allowed */</span></span><br><span class="line">    ast_t                           reason;                 <span class="comment">/* why we blocked */</span></span><br><span class="line">    uint32_t                        quantum_remaining;</span><br><span class="line">    wait_result_t                   wait_result;    <span class="comment">/* outcome of wait -</span></span><br><span class="line"><span class="comment">                                                    * may be examined by this thread</span></span><br><span class="line"><span class="comment">                                                    * WITHOUT locking */</span></span><br><span class="line">    thread_continue_t       continuation;   <span class="comment">/* continue here next dispatch */</span></span><br><span class="line">    <span class="keyword">void</span>                            *parameter;             <span class="comment">/* continuation parameter */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Data updated/used in thread_invoke */</span></span><br><span class="line">    vm_offset_t             kernel_stack;           <span class="comment">/* current kernel stack */</span></span><br><span class="line">    vm_offset_t                     reserved_stack;         <span class="comment">/* reserved kernel stack */</span></span><br><span class="line"></span><br><span class="line">#if KASAN</span><br><span class="line">    struct kasan_thread_data kasan_data;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#if CONFIG_KSANCOV</span><br><span class="line">    <span class="keyword">void</span> *ksancov_data;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Thread state: */</span></span><br><span class="line">    int                                     state;</span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> *    Thread states [bits or'ed]</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">#define TH_WAIT                 0x01                    /* queued for waiting */</span><br><span class="line">#define TH_SUSP                 0x02                    /* stopped or requested to stop */</span><br><span class="line">#define TH_RUN                  0x04                    /* running or on runq */</span><br><span class="line">#define TH_UNINT                0x08                    /* waiting uninteruptibly */</span><br><span class="line">#define TH_TERMINATE    0x10                    /* halted at termination */</span><br><span class="line">#define TH_TERMINATE2   0x20                    /* added to termination queue */</span><br><span class="line">#define TH_WAIT_REPORT  0x40                    /* the wait is using the sched_call,</span><br><span class="line">                                             *                                  only <span class="keyword">set</span> if TH_WAIT is also <span class="keyword">set</span> */</span><br><span class="line">#define TH_IDLE                 0x80                    /* idling processor */</span><br><span class="line"></span><br><span class="line">    /* Scheduling information */</span><br><span class="line">    sched_mode_t                    sched_mode;             /* scheduling mode */</span><br><span class="line">    sched_mode_t                    saved_mode;             /* saved mode during forced mode demotion */</span><br><span class="line"></span><br><span class="line">    /* This thread's contribution to global sched counters */</span><br><span class="line">    sched_bucket_t                  th_sched_bucket;</span><br><span class="line"></span><br><span class="line">    sfi_class_id_t                  sfi_class;              /* SFI class (XXX Updated on CSW/QE/AST) */</span><br><span class="line">    sfi_class_id_t                  sfi_wait_class; /* Currently in SFI wait for this class, protected by sfi_lock */</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    uint32_t                        sched_flags;            /* current flag bits */</span><br><span class="line">#define TH_SFLAG_NO_SMT                 0x0001          /* On an SMT CPU, this thread must be scheduled alone */</span><br><span class="line">#define TH_SFLAG_FAILSAFE               0x0002          /* fail-safe has tripped */</span><br><span class="line">#define TH_SFLAG_THROTTLED              0x0004          /* throttled thread forced to timeshare mode (may be applied in addition to failsafe) */</span><br><span class="line">#define TH_SFLAG_DEMOTED_MASK      (TH_SFLAG_THROTTLED | TH_SFLAG_FAILSAFE)     /* saved_mode contains previous sched_mode */</span><br><span class="line"></span><br><span class="line">#define TH_SFLAG_PROMOTED               0x0008          /* sched pri has been promoted by kernel mutex priority promotion */</span><br><span class="line">#define TH_SFLAG_ABORT                  0x0010          /* abort interruptible waits */</span><br><span class="line">#define TH_SFLAG_ABORTSAFELY            0x0020          /* ... but only those at safe point */</span><br><span class="line">#define TH_SFLAG_ABORTED_MASK           (TH_SFLAG_ABORT | TH_SFLAG_ABORTSAFELY)</span><br><span class="line">#define TH_SFLAG_DEPRESS                0x0040          /* normal depress yield */</span><br><span class="line">#define TH_SFLAG_POLLDEPRESS            0x0080          /* polled depress yield */</span><br><span class="line">#define TH_SFLAG_DEPRESSED_MASK         (TH_SFLAG_DEPRESS | TH_SFLAG_POLLDEPRESS)</span><br><span class="line">/* unused TH_SFLAG_PRI_UPDATE           0x0100 */</span><br><span class="line">#define TH_SFLAG_EAGERPREEMPT           0x0200          /* Any preemption of this thread should be treated as if AST_URGENT applied */</span><br><span class="line">#define TH_SFLAG_RW_PROMOTED            0x0400          /* promote reason: blocking with RW lock held */</span><br><span class="line">#define TH_SFLAG_BASE_PRI_FROZEN        0x0800          /* (effective) base_pri is frozen */</span><br><span class="line">#define TH_SFLAG_WAITQ_PROMOTED         0x1000          /* promote reason: waitq wakeup (generally for IPC receive) */</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#define TH_SFLAG_EXEC_PROMOTED          0x8000          /* promote reason: thread is in an exec */</span><br><span class="line"></span><br><span class="line">/* 'promote reasons' that request a priority floor only, not a custom priority */</span><br><span class="line">#define TH_SFLAG_PROMOTE_REASON_MASK    (TH_SFLAG_RW_PROMOTED | TH_SFLAG_WAITQ_PROMOTED | TH_SFLAG_EXEC_PROMOTED)</span><br><span class="line"></span><br><span class="line">#define TH_SFLAG_RW_PROMOTED_BIT        (10)    /* 0x400 */</span><br><span class="line"></span><br><span class="line">    int16_t                         sched_pri;              /* scheduled (current) priority */</span><br><span class="line">    int16_t                         base_pri;               /* effective base priority (equal to req_base_pri unless TH_SFLAG_BASE_PRI_FROZEN) */</span><br><span class="line">    int16_t                         req_base_pri;           /* requested base priority */</span><br><span class="line">    int16_t                         max_priority;           /* copy of max base priority */</span><br><span class="line">    int16_t                         task_priority;          /* copy of task base priority */</span><br><span class="line">    int16_t                         promotion_priority;     /* priority thread is currently promoted to */</span><br><span class="line"></span><br><span class="line">#if defined(CONFIG_SCHED_GRRR)</span><br><span class="line">#if 0</span><br><span class="line">    uint16_t                        grrr_deficit;           /* fixed point (1/1000th quantum) fractional deficit */</span><br><span class="line">#endif</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    int                             iotier_override; /* atomic operations to <span class="keyword">set</span>, cleared on ret to user */</span><br><span class="line">    os_refcnt_t                     ref_count;              /* number of references to me */</span><br><span class="line"></span><br><span class="line">    lck_mtx_t*                      waiting_for_mutex;      /* points to mutex we're waiting for until we acquire it */</span><br><span class="line"></span><br><span class="line">    uint32_t                        rwlock_count;   /* Number of lck_rw_t locks held by thread */</span><br><span class="line"></span><br><span class="line">    integer_t                       importance;                     /* task-relative importance */</span><br><span class="line"></span><br><span class="line">    /* Priority depression expiration */</span><br><span class="line">    integer_t                       depress_timer_active;</span><br><span class="line">    timer_call_data_t       depress_timer;</span><br><span class="line">    /* real-time parameters */</span><br><span class="line">    struct &#123;                                                                <span class="comment">/* see mach/thread_policy.h */</span></span><br><span class="line">        uint32_t                        period;</span><br><span class="line">        uint32_t                        computation;</span><br><span class="line">        uint32_t                        constraint;</span><br><span class="line">        boolean_t                       preemptible;</span><br><span class="line">        uint64_t                        deadline;</span><br><span class="line">    &#125;                                       realtime;</span><br><span class="line"></span><br><span class="line">    uint64_t                        last_run_time;          <span class="comment">/* time when thread was switched away from */</span></span><br><span class="line">    uint64_t                        last_made_runnable_time;        <span class="comment">/* time when thread was unblocked or preempted */</span></span><br><span class="line">    uint64_t                        last_basepri_change_time;       <span class="comment">/* time when thread was last changed in basepri while runnable */</span></span><br><span class="line">    uint64_t                        same_pri_latency;</span><br><span class="line">#define THREAD_NOT_RUNNABLE (~0ULL)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">#if defined(CONFIG_SCHED_MULTIQ)</span><br><span class="line">    sched_group_t                   sched_group;</span><br><span class="line">#endif /* defined(CONFIG_SCHED_MULTIQ) */</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Data used during setrun/dispatch */</span></span><br><span class="line">    timer_data_t            system_timer;           <span class="comment">/* system mode timer */</span></span><br><span class="line">    processor_t                     bound_processor;        <span class="comment">/* bound to a processor? */</span></span><br><span class="line">    processor_t                     last_processor;         <span class="comment">/* processor last dispatched on */</span></span><br><span class="line">    processor_t                     chosen_processor;       <span class="comment">/* Where we want to run this thread */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Fail-safe computation since last unblock or qualifying yield */</span></span><br><span class="line">    uint64_t                        computation_metered;</span><br><span class="line">    uint64_t                        computation_epoch;</span><br><span class="line">    uint64_t                        safe_release;   <span class="comment">/* when to release fail-safe */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Call out from scheduler */</span></span><br><span class="line">    <span class="keyword">void</span>                            (*sched_call)(</span><br><span class="line">        int                     type,</span><br><span class="line">        thread_t        thread);</span><br><span class="line">#if defined(CONFIG_SCHED_PROTO)</span><br><span class="line">    uint32_t                        runqueue_generation;    <span class="comment">/* last time runqueue was drained */</span></span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Statistics and timesharing calculations */</span></span><br><span class="line">#if defined(CONFIG_SCHED_TIMESHARE_CORE)</span><br><span class="line">    natural_t                       sched_stamp;    <span class="comment">/* last scheduler tick */</span></span><br><span class="line">    natural_t                       sched_usage;    <span class="comment">/* timesharing cpu usage [sched] */</span></span><br><span class="line">    natural_t                       pri_shift;              <span class="comment">/* usage -&gt; priority from pset */</span></span><br><span class="line">    natural_t                       cpu_usage;              <span class="comment">/* instrumented cpu usage [%cpu] */</span></span><br><span class="line">    natural_t                       cpu_delta;              <span class="comment">/* accumulated cpu_usage delta */</span></span><br><span class="line">#endif /* CONFIG_SCHED_TIMESHARE_CORE */</span><br><span class="line"></span><br><span class="line">    uint32_t                        c_switch;               <span class="comment">/* total context switches */</span></span><br><span class="line">    uint32_t                        p_switch;               <span class="comment">/* total processor switches */</span></span><br><span class="line">    uint32_t                        ps_switch;              <span class="comment">/* total pset switches */</span></span><br><span class="line"></span><br><span class="line">    integer_t mutex_count;  <span class="comment">/* total count of locks held */</span></span><br><span class="line">    <span class="comment">/* Timing data structures */</span></span><br><span class="line">    int                                     precise_user_kernel_time; <span class="comment">/* precise user/kernel enabled for this thread */</span></span><br><span class="line">    timer_data_t            user_timer;                     <span class="comment">/* user mode timer */</span></span><br><span class="line">    uint64_t                        user_timer_save;        <span class="comment">/* saved user timer value */</span></span><br><span class="line">    uint64_t                        system_timer_save;      <span class="comment">/* saved system timer value */</span></span><br><span class="line">    uint64_t                        vtimer_user_save;       <span class="comment">/* saved values for vtimers */</span></span><br><span class="line">    uint64_t                        vtimer_prof_save;</span><br><span class="line">    uint64_t                        vtimer_rlim_save;</span><br><span class="line">    uint64_t                        vtimer_qos_save;</span><br><span class="line"></span><br><span class="line">    timer_data_t            ptime;                  <span class="comment">/* time executing in P mode */</span></span><br><span class="line">    timer_data_t            runnable_timer;         <span class="comment">/* time the thread is runnable (including running) */</span></span><br><span class="line"></span><br><span class="line">#if CONFIG_SCHED_SFI</span><br><span class="line">    <span class="comment">/* Timing for wait state */</span></span><br><span class="line">    uint64_t                wait_sfi_begin_time;    <span class="comment">/* start time for thread waiting in SFI */</span></span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Timed wait expiration */</span></span><br><span class="line">    timer_call_data_t       wait_timer;</span><br><span class="line">    integer_t                       wait_timer_active;</span><br><span class="line">    boolean_t                       wait_timer_is_set;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * Processor/cache affinity</span></span><br><span class="line"><span class="comment">     * - affinity_threads links task threads with the same affinity set</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    affinity_set_t                  affinity_set;</span><br><span class="line">    queue_chain_t                   affinity_threads;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Various bits of state to stash across a continuation, exclusive to the current thread block point */</span></span><br><span class="line">    union &#123;</span><br><span class="line">        struct &#123;</span><br><span class="line">            mach_msg_return_t       state;          <span class="comment">/* receive state */</span></span><br><span class="line">            mach_port_seqno_t       seqno;          <span class="comment">/* seqno of recvd message */</span></span><br><span class="line">            ipc_object_t            object;         <span class="comment">/* object received on */</span></span><br><span class="line">            mach_vm_address_t       msg_addr;       <span class="comment">/* receive buffer pointer */</span></span><br><span class="line">            mach_msg_size_t         rsize;          <span class="comment">/* max size for recvd msg */</span></span><br><span class="line">            mach_msg_size_t         msize;          <span class="comment">/* actual size for recvd msg */</span></span><br><span class="line">            mach_msg_option_t       option;         <span class="comment">/* options for receive */</span></span><br><span class="line">            mach_port_name_t        receiver_name;  <span class="comment">/* the receive port name */</span></span><br><span class="line">            struct knote            *knote;         <span class="comment">/* knote fired for rcv */</span></span><br><span class="line">            union &#123;</span><br><span class="line">                struct ipc_kmsg   *kmsg;        <span class="comment">/* received message */</span></span><br><span class="line">                struct ipc_mqueue *peekq;       <span class="comment">/* mqueue to peek at */</span></span><br><span class="line">                struct &#123;</span><br><span class="line">                    mach_msg_priority_t qos;        <span class="comment">/* received message qos */</span></span><br><span class="line">                    mach_msg_priority_t oqos;       <span class="comment">/* override qos for message */</span></span><br><span class="line">                &#125; received_qos;</span><br><span class="line">            &#125;;</span><br><span class="line">            mach_msg_continue_t     continuation;</span><br><span class="line">        &#125; receive;</span><br><span class="line">        struct &#123;</span><br><span class="line">            struct semaphore        *waitsemaphore;         <span class="comment">/* semaphore ref */</span></span><br><span class="line">            struct semaphore        *signalsemaphore;       <span class="comment">/* semaphore ref */</span></span><br><span class="line">            int                                     options;                        <span class="comment">/* semaphore options */</span></span><br><span class="line">            kern_return_t           result;                         <span class="comment">/* primary result */</span></span><br><span class="line">            mach_msg_continue_t continuation;</span><br><span class="line">        &#125; sema;</span><br><span class="line">        struct &#123;</span><br><span class="line">#define THREAD_SAVE_IOKIT_TLS_COUNT     8</span><br><span class="line">            <span class="keyword">void</span>                    *tls[THREAD_SAVE_IOKIT_TLS_COUNT];</span><br><span class="line">        &#125; iokit;</span><br><span class="line">    &#125; saved;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Only user threads can cause guard exceptions, only kernel threads can be thread call threads */</span></span><br><span class="line">    union &#123;</span><br><span class="line">        <span class="comment">/* Group and call this thread is working on behalf of */</span></span><br><span class="line">        struct &#123;</span><br><span class="line">            struct thread_call_group * thc_group;</span><br><span class="line">            struct thread_call *       thc_call;                    <span class="comment">/* debug only, may be deallocated */</span></span><br><span class="line">        &#125; thc_state;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Structure to save information about guard exception */</span></span><br><span class="line">        struct &#123;</span><br><span class="line">            mach_exception_code_t           code;</span><br><span class="line">            mach_exception_subcode_t        subcode;</span><br><span class="line">        &#125; guard_exc_info;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Kernel holds on this thread  */</span></span><br><span class="line">    int16_t                                         suspend_count;</span><br><span class="line">    <span class="comment">/* User level suspensions */</span></span><br><span class="line">    int16_t                                         user_stop_count;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* IPC data structures */</span></span><br><span class="line">#if IMPORTANCE_INHERITANCE</span><br><span class="line">    natural_t ith_assertions;                       <span class="comment">/* assertions pending drop */</span></span><br><span class="line">#endif</span><br><span class="line">    struct ipc_kmsg_queue ith_messages;             <span class="comment">/* messages to reap */</span></span><br><span class="line">    mach_port_t ith_rpc_reply;                      <span class="comment">/* reply port for kernel RPCs */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Ast/Halt data structures */</span></span><br><span class="line">    vm_offset_t                                     recover;                <span class="comment">/* page fault recover(copyin/out) */</span></span><br><span class="line"></span><br><span class="line">    queue_chain_t                           threads;                <span class="comment">/* global list of all threads */</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Activation */</span></span><br><span class="line">    queue_chain_t                   task_threads;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Task membership */</span></span><br><span class="line">    struct task                             *task;</span><br><span class="line">    vm_map_t                                map;</span><br><span class="line">#if DEVELOPMENT || DEBUG</span><br><span class="line">    boolean_t pmap_footprint_suspended;</span><br><span class="line">#endif /* DEVELOPMENT || DEBUG */</span><br><span class="line"></span><br><span class="line">    decl_lck_mtx_data(, mutex);</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Pending thread ast(s) */</span></span><br><span class="line">    ast_t                                   ast;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Miscellaneous bits guarded by mutex */</span></span><br><span class="line">    uint32_t</span><br><span class="line">        active:<span class="number">1</span>,                                   <span class="comment">/* Thread is active and has not been terminated */</span></span><br><span class="line">        started:<span class="number">1</span>,                                  <span class="comment">/* Thread has been started after creation */</span></span><br><span class="line">        static_param:<span class="number">1</span>,                             <span class="comment">/* Disallow policy parameter changes */</span></span><br><span class="line">        inspection:<span class="number">1</span>,                               <span class="comment">/* TRUE when task is being inspected by crash reporter */</span></span><br><span class="line">        policy_reset:<span class="number">1</span>,                             <span class="comment">/* Disallow policy parameter changes on terminating threads */</span></span><br><span class="line">        suspend_parked:<span class="number">1</span>,                           <span class="comment">/* thread parked in thread_suspended */</span></span><br><span class="line">        corpse_dup:<span class="number">1</span>,                               <span class="comment">/* TRUE when thread is an inactive duplicate in a corpse */</span></span><br><span class="line">    :<span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Ports associated with this thread */</span></span><br><span class="line">    struct ipc_port                 *ith_self;                      <span class="comment">/* not a right, doesn't hold ref */</span></span><br><span class="line">    struct ipc_port                 *ith_sself;                     <span class="comment">/* a send right */</span></span><br><span class="line">    struct ipc_port                 *ith_special_reply_port;         <span class="comment">/* ref to special reply port */</span></span><br><span class="line">    struct exception_action *exc_actions;</span><br><span class="line"></span><br><span class="line">#ifdef  MACH_BSD</span><br><span class="line">    <span class="keyword">void</span>                                    *uthread;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#if CONFIG_DTRACE</span><br><span class="line">    uint16_t t_dtrace_flags;                <span class="comment">/* DTrace thread states */</span></span><br><span class="line">#define TH_DTRACE_EXECSUCCESS   0x01</span><br><span class="line">    uint16_t t_dtrace_inprobe;          <span class="comment">/* Executing under dtrace_probe */</span></span><br><span class="line">    uint32_t t_dtrace_predcache;        <span class="comment">/* DTrace per thread predicate value hint */</span></span><br><span class="line">    int64_t t_dtrace_tracing;               <span class="comment">/* Thread time under dtrace_probe() */</span></span><br><span class="line">    int64_t t_dtrace_vtime;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    clock_sec_t t_page_creation_time;</span><br><span class="line">    uint32_t    t_page_creation_count;</span><br><span class="line">    uint32_t    t_page_creation_throttled;</span><br><span class="line">#if (DEVELOPMENT || DEBUG)</span><br><span class="line">    uint64_t    t_page_creation_throttled_hard;</span><br><span class="line">    uint64_t    t_page_creation_throttled_soft;</span><br><span class="line">#endif /* DEVELOPMENT || DEBUG */</span><br><span class="line">    int         t_pagein_error;            <span class="comment">/* for vm_fault(), holds error from vnop_pagein() */</span></span><br><span class="line"></span><br><span class="line">#ifdef KPERF</span><br><span class="line"><span class="comment">/* The high 8 bits are the number of frames to sample of a user callstack. */</span></span><br><span class="line">#define T_KPERF_CALLSTACK_DEPTH_OFFSET     (24)</span><br><span class="line">#define T_KPERF_SET_CALLSTACK_DEPTH(DEPTH) (((uint32_t)(DEPTH)) &lt;&lt; T_KPERF_CALLSTACK_DEPTH_OFFSET)</span><br><span class="line">#define T_KPERF_GET_CALLSTACK_DEPTH(FLAGS) ((FLAGS) &gt;&gt; T_KPERF_CALLSTACK_DEPTH_OFFSET)</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#define T_KPERF_AST_CALLSTACK (1U &lt;&lt; 0) /* dump a callstack on thread's next AST */</span><br><span class="line">#define T_KPERF_AST_DISPATCH  (1U &lt;&lt; 1) /* dump a name on thread's next AST */</span><br><span class="line">#define T_KPC_ALLOC           (1U &lt;&lt; 2) /* thread needs a kpc_buf allocated */</span><br><span class="line"><span class="comment">/* only go up to T_KPERF_CALLSTACK_DEPTH_OFFSET - 1 */</span></span><br><span class="line"></span><br><span class="line">#ifdef KPERF</span><br><span class="line">    uint32_t kperf_flags;</span><br><span class="line">    uint32_t kperf_pet_gen;  <span class="comment">/* last generation of PET that sampled this thread*/</span></span><br><span class="line">    uint32_t kperf_c_switch; <span class="comment">/* last dispatch detection */</span></span><br><span class="line">    uint32_t kperf_pet_cnt;  <span class="comment">/* how many times a thread has been sampled by PET */</span></span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#ifdef KPC</span><br><span class="line">    <span class="comment">/* accumulated performance counters for this thread */</span></span><br><span class="line">    uint64_t *kpc_buf;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">#if HYPERVISOR</span><br><span class="line">    <span class="comment">/* hypervisor virtual CPU object associated with this thread */</span></span><br><span class="line">    <span class="keyword">void</span> *hv_thread_target;</span><br><span class="line">#endif /* HYPERVISOR */</span><br><span class="line"></span><br><span class="line">    uint64_t thread_id;             <span class="comment">/*system wide unique thread-id*/</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Statistics accumulated per-thread and aggregated per-task */</span></span><br><span class="line">    uint32_t                syscalls_unix;</span><br><span class="line">    uint32_t                syscalls_mach;</span><br><span class="line">    ledger_t                t_ledger;</span><br><span class="line">    ledger_t                t_threadledger; <span class="comment">/* per thread ledger */</span></span><br><span class="line">    ledger_t                t_bankledger;                <span class="comment">/* ledger to charge someone */</span></span><br><span class="line">    uint64_t                t_deduct_bank_ledger_time;   <span class="comment">/* cpu time to be deducted from bank ledger */</span></span><br><span class="line">    uint64_t                t_deduct_bank_ledger_energy; <span class="comment">/* energy to be deducted from bank ledger */</span></span><br><span class="line"></span><br><span class="line">#if MONOTONIC</span><br><span class="line">    struct mt_thread t_monotonic;</span><br><span class="line">#endif /* MONOTONIC */</span><br><span class="line"></span><br><span class="line">    <span class="comment">/*** Machine-dependent state ***/</span></span><br><span class="line">    struct machine_thread   machine;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* policy is protected by the thread mutex */</span></span><br><span class="line">    struct thread_requested_policy  requested_policy;</span><br><span class="line">    struct thread_effective_policy  effective_policy;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* usynch override is protected by the task lock, eventually will be thread mutex */</span></span><br><span class="line">    struct thread_qos_override &#123;</span><br><span class="line">        struct thread_qos_override      *override_next;</span><br><span class="line">        uint32_t        override_contended_resource_count;</span><br><span class="line">        int16_t         override_qos;</span><br><span class="line">        int16_t         override_resource_type;</span><br><span class="line">        user_addr_t     override_resource;</span><br><span class="line">    &#125; *overrides;</span><br><span class="line"></span><br><span class="line">    uint32_t        kevent_overrides;</span><br><span class="line">    uint16_t        user_promotion_basepri;</span><br><span class="line">    uint16_t         kern_promotion_schedpri;</span><br><span class="line">    _Atomic uint16_t kevent_ast_bits;</span><br><span class="line"></span><br><span class="line">    io_stat_info_t                  thread_io_stats; <span class="comment">/* per-thread I/O statistics */</span></span><br><span class="line"></span><br><span class="line">#if CONFIG_EMBEDDED</span><br><span class="line">    task_watch_t *  taskwatch;              <span class="comment">/* task watch */</span></span><br><span class="line">#endif /* CONFIG_EMBEDDED */</span><br><span class="line"></span><br><span class="line">    uint32_t                        thread_callout_interrupt_wakeups;</span><br><span class="line">    uint32_t                        thread_callout_platform_idle_wakeups;</span><br><span class="line">    uint32_t                        thread_timer_wakeups_bin_1;</span><br><span class="line">    uint32_t                        thread_timer_wakeups_bin_2;</span><br><span class="line">    uint16_t                        thread_tag;</span><br><span class="line">    <span class="comment">/*</span></span><br><span class="line"><span class="comment">     * callout_* fields are only set for thread call threads whereas guard_exc_fatal is set</span></span><br><span class="line"><span class="comment">     * by user threads on themselves while taking a guard exception. So it's okay for them to</span></span><br><span class="line"><span class="comment">     * share this bitfield.</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    uint16_t                        callout_woken_from_icontext:<span class="number">1</span>,</span><br><span class="line">        callout_woken_from_platform_idle:<span class="number">1</span>,</span><br><span class="line">        callout_woke_thread:<span class="number">1</span>,</span><br><span class="line">        guard_exc_fatal:<span class="number">1</span>,</span><br><span class="line">        thread_bitfield_unused:<span class="number">12</span>;</span><br><span class="line"></span><br><span class="line">    mach_port_name_t                ith_voucher_name;</span><br><span class="line">    ipc_voucher_t                   ith_voucher;</span><br><span class="line">#if CONFIG_IOSCHED</span><br><span class="line">    <span class="keyword">void</span>                            *decmp_upl;</span><br><span class="line">#endif /* CONFIG_IOSCHED */</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* work interval (if any) associated with the thread. Uses thread mutex */</span></span><br><span class="line">    struct work_interval            *th_work_interval;</span><br><span class="line"></span><br><span class="line">#if     SCHED_TRACE_THREAD_WAKEUPS</span><br><span class="line">    uintptr_t               thread_wakeup_bt[<span class="number">64</span>];</span><br><span class="line">#endif</span><br><span class="line">    turnstile_update_flags_t inheritor_flags; <span class="comment">/* inheritor flags for inheritor field */</span></span><br><span class="line">    block_hint_t    pending_block_hint;</span><br><span class="line">    block_hint_t    block_hint;      <span class="comment">/* What type of primitive last caused us to block. */</span></span><br><span class="line">    integer_t       decompressions;  <span class="comment">/* Per-thread decompressions counter to be added to per-task decompressions counter */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure><br><br></details>
+
+<h2 id="线程方案"><a href="#线程方案" class="headerlink" title="线程方案"></a>线程方案</h2><p>我们常用涉及多线程的API有下面几种：<code>NSThread</code><code>pthread</code><code>GCD</code><code>NSOperation</code>，下面我们来看一组调用栈：  </p>
+<p>pthread<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/CC08B3F4-CDD6-4132-948C-B234652C9165.png" alt="iimg"><br>NSThread<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/EF48EE6D-432E-402B-8727-32C18E9B28A7.png" alt="iimg"><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/CC08B3F4-CDD6-4132-948C-B234652C9165.png" alt="iimg"><br>GCD<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/3BCFA882-0E19-4760-97BF-364DE94468C9.png" alt="iimg"><br>NSOperation<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/677AA08B-6A77-4A1B-9AB9-8CBFE94C59C8.png" alt="iimg"></p>
+<p>由此可知，<code>NSThread</code>的底层，会使用<code>pthread</code>来创建线程，同样的<code>NSOperation</code>的底层也是使用<code>GCD</code>来实现</p>
+<h3 id="pthread"><a href="#pthread" class="headerlink" title="pthread"></a>pthread</h3><p><code>OS X</code> 从<code>Leopard(1.5)</code>开始是一个经过认证的<code>UNIX</code>实现，这意味着<code>OS X</code> 能够完全兼容 <code>Portable Operating System Interface</code>(可移植操作系统接口，<a href="https://en.wikipedia.org/wiki/POSIX" target="_blank" rel="noopener">POSIX</a>)。  </p>
+<p><code>POSIX</code>兼容性是由XNU中的BSD实现的。BSD是对Mach内核的包装。</p>
+<p>其中<code>pthread</code>就是 <code>POSIX</code> <a href="https://en.wikipedia.org/wiki/POSIX_Threads" target="_blank" rel="noopener">thread</a>，POSIX线程模型实际上是除了Windows之外所有系统使用的线程API。   </p>
+<p><code>OS X</code>和<code>iOS</code>操作系统采用API映射的方式，将<code>pthread API</code>映射到原生的系统调用，内核通过这些系统调用创建线程。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/45380D3A-692C-4E61-BB2F-D3CC4213E5FC.png" alt="pthread"></p>
+<h3 id="GCD"><a href="#GCD" class="headerlink" title="GCD"></a>GCD</h3><p><code>Snow Leopard</code>引入了一套新的API用于多处理—— Grand Central Dispatch(GCD)。这套API引入了编程范式的变化：</p>
+<blockquote>
+<p>不要从线程和线程函数的角度思考，而是鼓励开发者从功能块的角度思考。</p>
+</blockquote>
+<p><code>GCD</code>的另一项优势是自动的随着逻辑处理器的个数而扩展。<code>GCD</code>的API本身都是基于<code>pthread_workqueue API</code>实现的，而<code>XNU</code>通过<code>workq</code>系统调用来支持这些API，具体细节请看下一章原理篇。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/96E20881C928BFCCB00A1A9FBA0FA966.jpg" alt="pthread"></p>
+<h3 id="NSOperation"><a href="#NSOperation" class="headerlink" title="NSOperation"></a>NSOperation</h3><p>一种面向对象的设计实现，相比于GCD，<code>NSOperation</code>更关注任务的状态与对任务的控制。</p>
+<h3 id="NSThread"><a href="#NSThread" class="headerlink" title="NSThread"></a>NSThread</h3><p>NSThread是封装程度最小最轻量级的，使用更灵活，但要手动管理线程的生命周期、线程同步和线程加锁等，底层的实现同pthread。</p>
+<h2 id="XNU概述"><a href="#XNU概述" class="headerlink" title="XNU概述"></a>XNU概述</h2><p><code>XNU</code>是整个<code>OS X</code>的核心，本身由一下几个组件构成：</p>
+<ul>
+<li>Mach微内核</li>
+<li>BSD层</li>
+<li>libKern</li>
+<li>I/O Kit</li>
+</ul>
+<h3 id="Mach"><a href="#Mach" class="headerlink" title="Mach"></a>Mach</h3><p><code>Mach</code>微内核所提供的API非常基础，仅能处理操作系统最基本的职责：</p>
+<ul>
+<li>进程和线程抽象</li>
+<li>虚拟内存管理</li>
+<li>任务调度</li>
+<li>进程间通信和消息传递机制  </li>
+</ul>
+<p><code>Mach</code>本身的API非常有限，本身也不是设计为一个具有全套功能的操作系统，苹果也不鼓励直接使用<code>Mach</code>的API，不过如果没有这些基础的API，其他工作都无法施展，任何额外的功能，例如文件和设备访问，都必须在此基础上实现，而刚刚说的“额外功能”都是有<code>BSD</code>层实现的。</p>
+<h3 id="BSD"><a href="#BSD" class="headerlink" title="BSD"></a>BSD</h3><p><code>BSD</code>层建立在<code>Mach</code>之上，也是<code>XNU</code>中一个不可分割的部分，这一层是一个很可靠且跟现代的API，提供了之前提到的<code>POSIX</code>兼容性，<code>BSD提供了更高层次的抽象</code>，其中包括：</p>
+<ul>
+<li>UNIX进程模型</li>
+<li>POSI线程模型</li>
+<li>UNIX用户和组</li>
+<li>网络协议栈(BSD Socket API)</li>
+<li>文件系统访问</li>
+<li>设备访问</li>
+</ul>
+<h3 id="libkern"><a href="#libkern" class="headerlink" title="libkern"></a>libkern</h3><p>大部分内核都是完全使用<code>C</code>和底层<code>汇编</code>来实现的，而<code>XNU</code>中的设备驱动可以使用<code>C++</code>编写，为了支持<code>C++</code>的运行时环境，<code>XNU</code>包含<code>libkern</code>库，这是一个内建的，自包含的<code>C++</code>库</p>
+<h3 id="I-O-Kit"><a href="#I-O-Kit" class="headerlink" title="I/O Kit"></a>I/O Kit</h3><p>设备驱动框架，使用<code>C++</code>环境的好处是：</p>
+<ul>
+<li>在内核中完整的，自包含的执行环境，使开发者可以更快速构建优雅稳定的设备驱动。</li>
+<li>使驱动程序可以工作在一个面向对象的环境中。</li>
+</ul>
+<p><code>OS X</code>与<code>iOS</code>架构图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/7469FAB4-E3B2-4702-A1FC-47005E624FF5.png" alt="darwin"><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/DCA741E4-1507-414D-8F20-B35DD0915440.png" alt="darwin"></p>
+<h2 id="用户态与内核态"><a href="#用户态与内核态" class="headerlink" title="用户态与内核态"></a>用户态与内核态</h2><p>内核是一个受信任的系统组件，同时也控制着极为关键的功能，因此，内核的功能和应用程序之间需要一种严格的分离，否则，应用程序的不稳定可能引发种整个系统的崩溃。内核态通过系统调用，向用户态代码提供各种服务，来保证内核的稳定。</p>
+<h2 id="kqueue"><a href="#kqueue" class="headerlink" title="kqueue"></a>kqueue</h2><p>在GCD的分析过程中，会涉及到<code>kqueue</code>，<code>kqueue</code>是<code>BSD</code>中的内核事件通知机制，一个<code>kqueue</code>指的是一个描述符，这个描述符会<code>阻塞等待一个特定类型和种类的事件发生</code>，用户态的进程可以等待这个描述符，因此<code>kqueue</code>提供了一种用于一个或多个进程同步的简单而高效的方法。</p>
+<p><code>kqueue</code>和对应的<code>kevent</code>构成了内核一步I/O的基础(因此也实现了POSIX的poll(2)和select(2)）。这点对于GCD的等待机制也尤为重要。</p>
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><p><a href="https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide" target="_blank" rel="noopener">Concurrency Programming Guide</a></p>
+<p><a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/Introduction/Introduction.html#//apple_ref/doc/uid/10000057i-CH1-SW1" target="_blank" rel="noopener">Threading Programming Guide</a></p>
+<p><a href="http://newosxbook.com/articles/GCD.html" target="_blank" rel="noopener">GCD Internals</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/01/10/从llvm看machO/" rel="next" title="从LLVM看MachO">
+                <i class="fa fa-chevron-left"></i> 从LLVM看MachO
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/02/26/GCD之线程原理向/" rel="prev" title="GCD之线程原理向">
+                GCD之线程原理向 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#概念"><span class="nav-number">2.</span> <span class="nav-text">概念</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#进程"><span class="nav-number">2.1.</span> <span class="nav-text">进程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#线程"><span class="nav-number">2.2.</span> <span class="nav-text">线程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Mach线程定义"><span class="nav-number">2.3.</span> <span class="nav-text">Mach线程定义</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#线程方案"><span class="nav-number">3.</span> <span class="nav-text">线程方案</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread"><span class="nav-number">3.1.</span> <span class="nav-text">pthread</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GCD"><span class="nav-number">3.2.</span> <span class="nav-text">GCD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSOperation"><span class="nav-number">3.3.</span> <span class="nav-text">NSOperation</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#NSThread"><span class="nav-number">3.4.</span> <span class="nav-text">NSThread</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#XNU概述"><span class="nav-number">4.</span> <span class="nav-text">XNU概述</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Mach"><span class="nav-number">4.1.</span> <span class="nav-text">Mach</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#BSD"><span class="nav-number">4.2.</span> <span class="nav-text">BSD</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#libkern"><span class="nav-number">4.3.</span> <span class="nav-text">libkern</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#I-O-Kit"><span class="nav-number">4.4.</span> <span class="nav-text">I/O Kit</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#用户态与内核态"><span class="nav-number">5.</span> <span class="nav-text">用户态与内核态</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#kqueue"><span class="nav-number">6.</span> <span class="nav-text">kqueue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考资料"><span class="nav-number">7.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="GCD系列 文章之原理向，本文将通过libdispatchlibpthreadxnu详细的剖析GCD实现原理。">
+<meta name="keywords" content="GCD">
+<meta property="og:type" content="article">
+<meta property="og:title" content="GCD之线程原理向">
+<meta property="og:url" content="http://yfeii.github.io/2020/02/26/GCD之线程原理向/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="GCD系列 文章之原理向，本文将通过libdispatchlibpthreadxnu详细的剖析GCD实现原理。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/1DE6ABF4F091088A1226BCE36B3809B1.jpg">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/44E8EA4B-9ED5-4B7C-8E39-EB076A86F379.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/6DFB34B3-4E25-48CD-968E-532E8E02CA49.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/B8832DD8-C295-4226-8927-745B06412250.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/4BAFF1B8-F1DB-481A-BCAB-987DF5A810F0.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/gcd_sync.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/E1F8E96C-2BD8-42BD-BAEC-71E8A299AC1A.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/15D87AB2-40F0-4036-A898-ADD1E37AB508.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/B187B285-2400-41AC-AA2A-4AC28A7A203F.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/4722E63ACB596717551E5546EA5C8F51.jpg">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/gcd_async.png">
+<meta property="og:updated_time" content="2020-03-13T01:16:53.095Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="GCD之线程原理向">
+<meta name="twitter:description" content="GCD系列 文章之原理向，本文将通过libdispatchlibpthreadxnu详细的剖析GCD实现原理。">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/1DE6ABF4F091088A1226BCE36B3809B1.jpg">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2020/02/26/GCD之线程原理向/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>GCD之线程原理向 | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2020/02/26/GCD之线程原理向/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">GCD之线程原理向
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-02-26 09:40:55" itemprop="dateCreated datePublished" datetime="2020-02-26T09:40:55+08:00">2020-02-26</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-03-13 09:16:53" itemprop="dateModified" datetime="2020-03-13T09:16:53+08:00">2020-03-13</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/多线程/" itemprop="url" rel="index"><span itemprop="name">多线程</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>GCD系列 文章之原理向，本文将通过<code>libdispatch</code><code>libpthread</code><code>xnu</code>详细的剖析GCD实现原理。<a id="more"></a></p>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>本文将直接从源码讲起，读者可以对照前一篇概念向的文章来阅读本文，所有源码均在苹果开源官网下可<a href="https://opensource.apple.com/" target="_blank" rel="noopener">下载</a><br>源码 | 版本<br>-|-<br>libdispatch | 1008.250.7<br>libpthread | 330.250.2<br>xnu | 6153.11.26  </p>
+<h2 id="队列的创建"><a href="#队列的创建" class="headerlink" title="队列的创建"></a>队列的创建</h2><p>通过<code>dispatch_queue_create</code>或者通过<code>dispatch_queue_create_with_target</code>来创建一个队列，二者的实现都一致，只不过第一个函数的<code>target</code>为<code>root queue</code>。下面直接看实现</p>
+<h2 id="dispatch-queue-create"><a href="#dispatch-queue-create" class="headerlink" title="dispatch_queue_create"></a>dispatch_queue_create</h2><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">dispatch_queue_t</span><br><span class="line">dispatch_queue_create_with_target(<span class="keyword">const</span> char *label, dispatch_queue_attr_t dqa,</span><br><span class="line">        dispatch_queue_t tq)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> _dispatch_lane_create_with_target(label, dqa, tq, <span class="literal">false</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>直接调用<code>_dispatch_lane_create_with_target</code>，该方法流程较长(其实源码的注释已经很清晰了)，这里缩减如下：<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_NOINLINE</span><br><span class="line"><span class="keyword">static</span> dispatch_queue_t</span><br><span class="line">_dispatch_lane_create_with_target(<span class="keyword">const</span> char *label, dispatch_queue_attr_t dqa,</span><br><span class="line">        dispatch_queue_t tq, bool legacy)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_queue_attr_info_t dqai = _dispatch_queue_attr_to_info(dqa);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Step 1: Normalize arguments (qos, overcommit, tq) </span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// tq 默认值 = _dispatch_get_root_queue</span></span><br><span class="line"></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Step 2: Initialize the queue</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (legacy) &#123;</span><br><span class="line">        <span class="comment">// if any of these attributes is specified, use non legacy classes</span></span><br><span class="line">        <span class="keyword">if</span> (dqai.dqai_inactive || dqai.dqai_autorelease_frequency) &#123;</span><br><span class="line">            legacy = <span class="literal">false</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">const</span> <span class="keyword">void</span> *vtable;</span><br><span class="line">    dispatch_queue_flags_t dqf = legacy ? DQF_MUTABLE : <span class="number">0</span>;</span><br><span class="line">    <span class="keyword">if</span> (dqai.dqai_concurrent) &#123;</span><br><span class="line">        vtable = DISPATCH_VTABLE(queue_concurrent);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        vtable = DISPATCH_VTABLE(queue_serial);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">switch</span> (dqai.dqai_autorelease_frequency) &#123;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_AUTORELEASE_FREQUENCY_NEVER:</span><br><span class="line">        dqf |= DQF_AUTORELEASE_NEVER;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    <span class="keyword">case</span> DISPATCH_AUTORELEASE_FREQUENCY_WORK_ITEM:</span><br><span class="line">        dqf |= DQF_AUTORELEASE_ALWAYS;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (label) &#123;</span><br><span class="line">        <span class="keyword">const</span> char *tmp = _dispatch_strdup_if_mutable(label);</span><br><span class="line">        <span class="keyword">if</span> (tmp != label) &#123;</span><br><span class="line">            dqf |= DQF_LABEL_NEEDS_FREE;</span><br><span class="line">            label = tmp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dispatch_lane_t dq = _dispatch_object_alloc(vtable,</span><br><span class="line">            sizeof(struct dispatch_lane_s));</span><br><span class="line">    _dispatch_queue_init(dq, dqf, dqai.dqai_concurrent ?</span><br><span class="line">            DISPATCH_QUEUE_WIDTH_MAX : <span class="number">1</span>, DISPATCH_QUEUE_ROLE_INNER |</span><br><span class="line">            (dqai.dqai_inactive ? DISPATCH_QUEUE_INACTIVE : <span class="number">0</span>));</span><br><span class="line"></span><br><span class="line">    dq-&gt;dq_label = label;</span><br><span class="line">    dq-&gt;dq_priority = _dispatch_priority_make((dispatch_qos_t)dqai.dqai_qos,</span><br><span class="line">            dqai.dqai_relpri);</span><br><span class="line">    <span class="keyword">if</span> (overcommit == _dispatch_queue_attr_overcommit_enabled) &#123;</span><br><span class="line">        dq-&gt;dq_priority |= DISPATCH_PRIORITY_FLAG_OVERCOMMIT;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (!dqai.dqai_inactive) &#123;</span><br><span class="line">        _dispatch_queue_priority_inherit_from_target(dq, tq);</span><br><span class="line">        _dispatch_lane_inherit_wlh_from_target(dq, tq);</span><br><span class="line">    &#125;</span><br><span class="line">    _dispatch_retain(tq);</span><br><span class="line">    dq-&gt;do_targetq = tq;</span><br><span class="line">    _dispatch_object_debug(dq, <span class="string">"%s"</span>, __func__);</span><br><span class="line">    <span class="keyword">return</span> _dispatch_trace_queue_create(dq).rdxz_dq;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个方法冲注释来看来还是比较直观：</p>
+<ol>
+<li>初始化队列的参数：qos, overcommit, tq。</li>
+<li>初始化队列。把1中的参数赋值给队列。返回。</li>
+</ol>
+<blockquote>
+<p>While custom queues are a powerful abstraction, all blocks you schedule on them will ultimately trickle down to one of the system’s global queues and its thread pool(s).</p>
+</blockquote>
+<p>有点需要注意的就是，自定义的队列<code>block </code>，都将会在全局队列中被执行。</p>
+<h2 id="sync"><a href="#sync" class="headerlink" title="sync"></a>sync</h2><p>先从<code>dispatch_sync()</code>的方法定义，在<code>dispatch/queue.h</code>中，我们可以得到如下信息：</p>
+<ul>
+<li>提交一个工作项(workitem)，但是直到这个<code>workitem</code>执行完成前，<code>dispatch_sync()</code>都不会返回</li>
+<li>在当前线程中调用<code>dispatch_sync()</code>，会造成死锁</li>
+<li><code>dispatch_sync()</code>对于主队列和target为主队列的<code>workitem</code>做了一些优化。  </li>
+</ul>
+<p>接下来我们查看下具体<code>dispatch_sync()</code>实现，来到<code>libdispatch</code>的源码，<code>dispatch_sync()</code>会经过下面两个函数的包装之后，</p>
+<blockquote>
+<p>dispatch_sync()<br>       _dispatch_sync_f()<br>           _dispatch_sync_f_inline()  </p>
+</blockquote>
+<h3 id="dispatch-sync-f-inline"><a href="#dispatch-sync-f-inline" class="headerlink" title="_dispatch_sync_f_inline"></a>_dispatch_sync_f_inline</h3><p>这里放出伪代码1<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">   dispatch_queue_t queue = dispatch_queue_create(<span class="string">"deadLockTest"</span>, DISPATCH_QUEUE_SERIAL);</span><br><span class="line"><span class="comment">//    dispatch_async(dispatch_queue_create("test2", DISPATCH_QUEUE_CONCURRENT), ^&#123;</span></span><br><span class="line"><span class="comment">//        sleep(5);</span></span><br><span class="line"><span class="comment">//        dispatch_sync(queue, ^&#123;</span></span><br><span class="line"><span class="comment">//            </span></span><br><span class="line"><span class="comment">//            NSLog(@"\n 2222");</span></span><br><span class="line"><span class="comment">//        &#125;);</span></span><br><span class="line"><span class="comment">//    &#125;);</span></span><br><span class="line">    <span class="keyword">for</span> (int i = <span class="number">0</span>; i&lt;<span class="number">10</span>; i++) &#123;</span><br><span class="line">        </span><br><span class="line">        NSLog(@<span class="string">"\n before"</span>);</span><br><span class="line">        dispatch_sync(queue, ^&#123;</span><br><span class="line">            <span class="comment">//            sleep(5);</span></span><br><span class="line">            NSLog(@<span class="string">"\n i = %d"</span>,i);</span><br><span class="line">        &#125;);</span><br><span class="line">        dispatch_sync(queue, ^&#123;</span><br><span class="line">            <span class="comment">//            sleep(5);</span></span><br><span class="line">            NSLog(@<span class="string">"\n i = %d"</span>,i);</span><br><span class="line">        &#125;);</span><br><span class="line">        NSLog(@<span class="string">"\n end"</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure></p>
+<p>进入主要的流程: <code>_dispatch_sync_f_inline</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// dq:queue, ctxt:gcd block，_dispatch_Block_invoke: block的实现</span></span><br><span class="line">_dispatch_sync_f_inline(dispatch_queue_t dq, <span class="keyword">void</span> *ctxt,</span><br><span class="line">        dispatch_function_t func, uintptr_t dc_flags)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//如果线程是穿行队列：并发数是1</span></span><br><span class="line">    <span class="keyword">if</span> (likely(dq-&gt;dq_width == <span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_barrier_sync_f(dq, ctxt, func, dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//DISPATCH_LANE_TYPE 为并行队列类型。</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(dx_metatype(dq) != _DISPATCH_LANE_TYPE)) &#123;</span><br><span class="line">        DISPATCH_CLIENT_CRASH(<span class="number">0</span>, <span class="string">"Queue type doesn't support dispatch_sync"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dispatch_lane_t dl = upcast(dq)._dl;</span><br><span class="line">    <span class="comment">// Global concurrent queues and queues bound to non-dispatch threads</span></span><br><span class="line">    <span class="comment">// always fall into the slow case, see DISPATCH_ROOT_QUEUE_STATE_INIT_VALUE</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(!_dispatch_queue_try_reserve_sync_width(dl))) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_f_slow(dl, ctxt, func, <span class="number">0</span>, dl, dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (unlikely(dq-&gt;do_targetq-&gt;do_targetq)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_recurse(dl, ctxt, func, dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line">    _dispatch_introspection_sync_begin(dl);</span><br><span class="line">    </span><br><span class="line"><span class="comment">//    dispatch_object_t obj = _dispatch_trace_item_sync_push_pop(dq, ctxt, func, dc_flags);</span></span><br><span class="line"><span class="comment">//    _dispatch_sync_invoke_and_complete(dl, ctxt, func DISPATCH_TRACE_ARG(obj));</span></span><br><span class="line">    </span><br><span class="line">    </span><br><span class="line">    _dispatch_sync_invoke_and_complete(dl, ctxt, func DISPATCH_TRACE_ARG(</span><br><span class="line">            _dispatch_trace_item_sync_push_pop(dq, ctxt, func, dc_flags)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>先来看下对于穿行队列的实现，<code>_dispatch_barrier_sync_f</code>的真正实现为<code>_dispatch_barrier_sync_f_inline</code></p>
+<h3 id="dispatch-barrier-sync-f-inline"><a href="#dispatch-barrier-sync-f-inline" class="headerlink" title="_dispatch_barrier_sync_f_inline"></a>_dispatch_barrier_sync_f_inline</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> inline <span class="keyword">void</span></span><br><span class="line"><span class="comment">// dq:queue, ctxt:gcd block，_dispatch_Block_invoke: block的实现</span></span><br><span class="line">_dispatch_barrier_sync_f_inline(dispatch_queue_t dq, <span class="keyword">void</span> *ctxt,</span><br><span class="line">        dispatch_function_t func, uintptr_t dc_flags)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//获取线程tid</span></span><br><span class="line">    dispatch_tid tid = _dispatch_tid_self();</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//DISPATCH_LANE_TYPE 为并行队列类型。</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(dx_metatype(dq) != _DISPATCH_LANE_TYPE)) &#123;</span><br><span class="line">        DISPATCH_CLIENT_CRASH(<span class="number">0</span>, <span class="string">"Queue type doesn't support dispatch_sync"</span>);</span><br><span class="line">    &#125;t</span><br><span class="line">    </span><br><span class="line">    dispatch_lane_t dl = upcast(dq)._dl;</span><br><span class="line">    <span class="comment">// The more correct thing to do would be to merge the qos of the thread</span></span><br><span class="line">    <span class="comment">// that just acquired the barrier lock into the queue state.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// However this is too expensive for the fast path, so skip doing it.</span></span><br><span class="line">    <span class="comment">// The chosen tradeoff is that if an enqueue on a lower priority thread</span></span><br><span class="line">    <span class="comment">// contends with this fast path, this thread may receive a useless override.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Global concurrent queues and queues bound to non-dispatch threads</span></span><br><span class="line">    <span class="comment">// always fall into the slow case, see DISPATCH_ROOT_QUEUE_STATE_INIT_VALUE</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">//尝试给这个队列加锁，如果加锁失败，说明当前队列正在被调度，则进行慢速的同步流程，</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(!_dispatch_queue_try_acquire_barrier_sync(dl, tid))) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_f_slow(dl, ctxt, func, DC_FLAG_BARRIER, dl,</span><br><span class="line">                DC_FLAG_BARRIER | dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//是否存在多级转发的情况，如果存在就进行递归处理</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(dl-&gt;do_targetq-&gt;do_targetq)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_recurse(dl, ctxt, func,</span><br><span class="line">                DC_FLAG_BARRIER | dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//到这里说明队列中的任务可以立即被执行，并且在执行完毕之后要重置队列的dq_state</span></span><br><span class="line">    _dispatch_introspection_sync_begin(dl);</span><br><span class="line">    _dispatch_lane_barrier_sync_invoke_and_complete(dl, ctxt, func</span><br><span class="line">            DISPATCH_TRACE_ARG(_dispatch_trace_item_sync_push_pop(</span><br><span class="line">                    dq, ctxt, func, dc_flags | DC_FLAG_BARRIER)));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此函数的逻辑如下：<br>对串行队列进行尝试加锁处理。通过对<code>dq_state</code>的维护来判断调度状态，如果加锁失败则：<br>说明当前串行队里有<code>item</code>正在被执行，需要等待前一个<code>item</code>执行，因此进入slow环节。<br>反之如果加锁成功：<br>则说明当前<code>item</code>可以直接被执行，则直接执行，并在完成后重置<code>dq_state</code>的状态。</p>
+<p>接下来看一下不需要等待的流程</p>
+<h3 id="dispatch-lane-barrier-sync-invoke-and-complete"><a href="#dispatch-lane-barrier-sync-invoke-and-complete" class="headerlink" title="_dispatch_lane_barrier_sync_invoke_and_complete"></a>_dispatch_lane_barrier_sync_invoke_and_complete</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * For queues we can cheat and inline the unlock code, which is invalid</span></span><br><span class="line"><span class="comment"> * for objects with a more complex state machine (sources or mach channels)</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">DISPATCH_NOINLINE</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_lane_barrier_sync_invoke_and_complete(dispatch_lane_t dq,</span><br><span class="line">        <span class="keyword">void</span> *ctxt, dispatch_function_t func DISPATCH_TRACE_ARG(<span class="keyword">void</span> *dc))</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//调用_dispatch_client_callout，执行gcd block</span></span><br><span class="line">    _dispatch_sync_function_invoke_inline(dq, ctxt, func);</span><br><span class="line">    _dispatch_trace_item_complete(dc);</span><br><span class="line">    <span class="comment">//如果队列的末尾还有待工作的 item，或者不是串行。</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(dq-&gt;dq_items_tail || dq-&gt;dq_width &gt; <span class="number">1</span>)) &#123;</span><br><span class="line">        <span class="comment">//因为还需要继续执行下一个item，因此需要下面的函数来触发下个item的调度</span></span><br><span class="line">        <span class="comment">//主要这个函数的命名 没有 sync</span></span><br><span class="line">        <span class="keyword">return</span> _dispatch_lane_barrier_complete(dq, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Presence of any of these bits requires more work that only</span></span><br><span class="line">    <span class="comment">// _dispatch_*_barrier_complete() handles properly</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Note: testing for RECEIVED_OVERRIDE or RECEIVED_SYNC_WAIT without</span></span><br><span class="line">    <span class="comment">// checking the role is sloppy, but is a super fast check, and neither of</span></span><br><span class="line">    <span class="comment">// these bits should be set if the lock was never contended/discovered.</span></span><br><span class="line">    <span class="keyword">const</span> uint64_t fail_unlock_mask = DISPATCH_QUEUE_SUSPEND_BITS_MASK |</span><br><span class="line">            DISPATCH_QUEUE_ENQUEUED | DISPATCH_QUEUE_DIRTY |</span><br><span class="line">            DISPATCH_QUEUE_RECEIVED_OVERRIDE | DISPATCH_QUEUE_SYNC_TRANSFER |</span><br><span class="line">            DISPATCH_QUEUE_RECEIVED_SYNC_WAIT;</span><br><span class="line">   </span><br><span class="line">   <span class="comment">//    0xff80000000000000ull|0x00000001|0x0000008000000000ull|0x0000000800000000ull|0x00000002|0x0000000800000000ull</span></span><br><span class="line">    uint64_t old_state, new_state;</span><br><span class="line">    <span class="comment">//恢复线程的初始状态</span></span><br><span class="line">    <span class="comment">// similar to _dispatch_queue_drain_try_unlock</span></span><br><span class="line">    os_atomic_rmw_loop2o(dq, dq_state, old_state, new_state, release, &#123;</span><br><span class="line">        new_state  = old_state - DISPATCH_QUEUE_SERIAL_DRAIN_OWNED;</span><br><span class="line">        new_state &amp;= ~DISPATCH_QUEUE_DRAIN_UNLOCK_MASK;</span><br><span class="line">        new_state &amp;= ~DISPATCH_QUEUE_MAX_QOS_MASK;</span><br><span class="line">        <span class="keyword">if</span> (unlikely(old_state &amp; fail_unlock_mask)) &#123;</span><br><span class="line">            os_atomic_rmw_loop_give_up(&#123;</span><br><span class="line">                <span class="comment">//解锁失败，说明有其他线程再次修改了 该队列的state，也就是又有任务被追加了进来。</span></span><br><span class="line">                <span class="keyword">return</span> _dispatch_lane_barrier_complete(dq, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line">    <span class="keyword">if</span> (_dq_state_is_base_wlh(old_state)) &#123;</span><br><span class="line">        _dispatch_event_loop_assert_not_owned((dispatch_wlh_t)dq);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>此函数的逻辑如下：   </p>
+<ol>
+<li>首先进行当前队列中的<code>item</code>回调，也就是执行我们写的<code>GCD block</code>中的代码。  </li>
+<li>如果队列中还有其他任务的调用<code>_dispatch_lane_barrier_complete</code></li>
+<li>尝试将队列的状态：<code>dq_state</code> 恢复到初始状态。    <ol>
+<li>恢复成功则执行结束。</li>
+<li>恢复失败(其他线程修改<code>dq_state</code>，调度了该队列)，则调用<code>_dispatch_lane_barrier_complete</code>。  </li>
+</ol>
+</li>
+</ol>
+<p>下面是单纯的sync+串行队列的state 变化过程<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/1DE6ABF4F091088A1226BCE36B3809B1.jpg" alt="dq_state"><br>下面我们把伪代码中的<code>test2</code>队列的注释打开，来模拟调用<code>_dispatch_lane_barrier_complete</code>和<code>_dispatch_sync_f_slow</code>的场景。<br>首先打开注释的执行结果应该是：  </p>
+<ol>
+<li><code>async</code>创建一个线程来执行并sleep(5)。</li>
+<li>原来的<code>deadLockTest</code>会在主线程依次被执行。</li>
+<li>在<code>deadLockTest</code>执行的某一个时刻，<code>deadLockTest</code>又通过<code>async</code>之前开辟的线程同时被调度。  </li>
+</ol>
+<p>加下来我们结合之前的结论来观察调用栈：<br>通过上图我们来梳理下线程和队列当前的状态：</p>
+<ol>
+<li>主线程中在<code>deadLockTest</code>的一个任务执行完毕后，尝试恢复队列的初始状态，由于在<code>test2</code>中被</li>
+<li>调度test2的子线程在尝试同步执行deadlock队列。调用<code>_dispatch_queue_try_acquire_barrier_sync</code>时，触发了slow，内部</li>
+</ol>
+<p>我们先来看串行队列判断下一个任务需要等待执行的</p>
+<h3 id="dispatch-queue-try-acquire-barrier-sync"><a href="#dispatch-queue-try-acquire-barrier-sync" class="headerlink" title="_dispatch_queue_try_acquire_barrier_sync"></a>_dispatch_queue_try_acquire_barrier_sync</h3><p><code>_dispatch_queue_try_acquire_barrier_sync</code>内部直接调用了<code>_dispatch_queue_try_acquire_barrier_sync_and_suspend</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> inline bool</span><br><span class="line">_dispatch_queue_try_acquire_barrier_sync_and_suspend(dispatch_lane_t dq,</span><br><span class="line">        uint32_t tid, uint64_t suspend_count)</span><br><span class="line">&#123;</span><br><span class="line">    uint64_t init  = DISPATCH_QUEUE_STATE_INIT_VALUE(dq-&gt;dq_width); <span class="comment">//QUEUE_FULL and IN_BARRIER</span></span><br><span class="line">    <span class="comment">//获得加锁(下一个item的执行需要被等待)的的状态，队列并发数上限，barrier，已经被加锁过的tid，和暂停状态。</span></span><br><span class="line">    uint64_t value = DISPATCH_QUEUE_WIDTH_FULL_BIT | DISPATCH_QUEUE_IN_BARRIER |</span><br><span class="line">            _dispatch_lock_value_from_tid(tid) |</span><br><span class="line">            (suspend_count * DISPATCH_QUEUE_SUSPEND_INTERVAL);</span><br><span class="line">    uint64_t old_state, new_state;</span><br><span class="line"></span><br><span class="line"><span class="comment">//    bool _result = false;</span></span><br><span class="line"><span class="comment">//    typeof(&amp;(dq)-&gt;f) _p = (&amp;(dq)-&gt;f);</span></span><br><span class="line"><span class="comment">//    ov = os_atomic_load(_p, relaxed)//atomic_load_explicit(_os_atomic_c11_atomic(p), memory_order_relaxed)</span></span><br><span class="line"><span class="comment">//    do &#123;</span></span><br><span class="line"><span class="comment">//         uint64_t role = old_state &amp; DISPATCH_QUEUE_ROLE_MASK;</span></span><br><span class="line"><span class="comment">//         if (old_state != (init | role)) &#123;</span></span><br><span class="line"><span class="comment">//            os_atomic_rmw_loop_give_up(break);</span></span><br><span class="line"><span class="comment">//         &#125;</span></span><br><span class="line"><span class="comment">//      new_state = value | role;</span></span><br><span class="line"><span class="comment">//        _result = os_atomic_cmpxchgvw(_p, old_state, new_state, &amp;old_state, acquire);</span></span><br><span class="line"><span class="comment">//    &#125;while(os_unlikely(!_result))</span></span><br><span class="line"><span class="comment">//    return _result;</span></span><br><span class="line">    <span class="comment">//这个函数的作用就是尝试更新dq_state：</span></span><br><span class="line">    <span class="comment">//如果old_state != init(说明当前队列的dq_state已经被修改过)，那么放弃修改直接返回false</span></span><br><span class="line">    <span class="comment">//否则更新dq_state 返回true</span></span><br><span class="line">    <span class="keyword">return</span> os_atomic_rmw_loop2o(dq, dq_state, old_state, new_state, acquire, &#123;</span><br><span class="line">        uint64_t role = old_state &amp; DISPATCH_QUEUE_ROLE_MASK;</span><br><span class="line">        <span class="keyword">if</span> (old_state != (init | role)) &#123;</span><br><span class="line">            os_atomic_rmw_loop_give_up(<span class="keyword">break</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        new_state = value | role;</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这个函数的作用就是对一个队列尝试加锁的操作，如果加锁失败则直接放弃，否则修改<code>dq_state</code>。流程如下：</p>
+<ol>
+<li>获取队列执行需要等待的条件：<code>value</code></li>
+<li>获取队列的当前状态：old_state<ol>
+<li>如果不是初始状态则放弃并返回false：加锁失败，说明当前队列已经处在加锁状态。</li>
+<li>加锁成功，把 <code>value</code>的值赋值给<code>dq_state</code>。其中包含被加锁的线程id：tid。</li>
+</ol>
+</li>
+</ol>
+<p>等待的条件<code>value</code>如下：</p>
+<ol>
+<li>队列并发数上限。</li>
+<li>处在barrier中。</li>
+<li>已经被加锁过的tid。</li>
+<li>暂停状态。   </li>
+</ol>
+<p>接下来是等待函数的处理</p>
+<h3 id="dispatch-sync-f-slow"><a href="#dispatch-sync-f-slow" class="headerlink" title="_dispatch_sync_f_slow"></a>_dispatch_sync_f_slow</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line">DISPATCH_NOINLINE</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_sync_f_slow(dispatch_queue_class_t top_dqu, <span class="keyword">void</span> *ctxt,</span><br><span class="line">        dispatch_function_t func, uintptr_t top_dc_flags,</span><br><span class="line">        dispatch_queue_class_t dqu, uintptr_t dc_flags)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_queue_t top_dq = top_dqu._dq;</span><br><span class="line">    dispatch_queue_t dq = dqu._dq;</span><br><span class="line">    <span class="keyword">if</span> (unlikely(!dq-&gt;do_targetq)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_function_invoke(dq, ctxt, func);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//保存当前队列的运行上下文。</span></span><br><span class="line">    pthread_priority_t pp = _dispatch_get_priority();</span><br><span class="line">    struct dispatch_sync_context_s dsc = &#123;</span><br><span class="line">        .dc_flags    = DC_FLAG_SYNC_WAITER | dc_flags,</span><br><span class="line">        .dc_func     = _dispatch_async_and_wait_invoke,</span><br><span class="line">        .dc_ctxt     = &amp;dsc,</span><br><span class="line">        .dc_other    = top_dq,</span><br><span class="line">        .dc_priority = pp | _PTHREAD_PRIORITY_ENFORCE_FLAG,</span><br><span class="line">        .dc_voucher  = _voucher_get(),</span><br><span class="line">        .dsc_func    = func,</span><br><span class="line">        .dsc_ctxt    = ctxt,</span><br><span class="line">        .dsc_waiter  = _dispatch_tid_self(),</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    _dispatch_trace_item_push(top_dq, &amp;dsc);</span><br><span class="line">    <span class="comment">//核心的等待函数，如果进入等待状态，会阻塞下面的执行。</span></span><br><span class="line">    __DISPATCH_WAIT_FOR_QUEUE__(&amp;dsc, dq);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">//经过等待之后，执行item</span></span><br><span class="line">    <span class="keyword">if</span> (dsc.dsc_func == NULL) &#123;</span><br><span class="line">        dispatch_queue_t stop_dq = dsc.dc_other;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_sync_complete_recurse(top_dq, stop_dq, top_dc_flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_introspection_sync_begin(top_dq);</span><br><span class="line">    _dispatch_trace_item_pop(top_dq, &amp;dsc);</span><br><span class="line">    _dispatch_sync_invoke_and_complete_recurse(top_dq, ctxt, func,top_dc_flags</span><br><span class="line">            DISPATCH_TRACE_ARG(&amp;dsc));</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法是慢速执行的流程，可以分为3个步骤：</p>
+<ol>
+<li>构造队列执行上下文，并保存。</li>
+<li>进入等待。</li>
+<li>等待结束，被信号量或者kevent唤醒，开始继续执行。 </li>
+</ol>
+<p>当进入到<code> __DISPATCH_WAIT_FOR_QUEUE__ </code> 就会阻塞下面代码的执行，直到等待结束。下面我们来看一下等待的实现</p>
+<h3 id="DISPATCH-WAIT-FOR-QUEUE"><a href="#DISPATCH-WAIT-FOR-QUEUE" class="headerlink" title="__DISPATCH_WAIT_FOR_QUEUE__"></a>__DISPATCH_WAIT_FOR_QUEUE__</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">__DISPATCH_WAIT_FOR_QUEUE__(dispatch_sync_context_t dsc, dispatch_queue_t dq)</span><br><span class="line">&#123;</span><br><span class="line">    uint64_t dq_state = _dispatch_wait_prepare(dq);</span><br><span class="line">    <span class="comment">//死锁检测</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(_dq_state_drain_locked_by(dq_state, dsc-&gt;dsc_waiter))) &#123;</span><br><span class="line">        DISPATCH_CLIENT_CRASH((uintptr_t)dq_state,</span><br><span class="line">                <span class="string">"dispatch_sync called on queue "</span></span><br><span class="line">                <span class="string">"already owned by current thread"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Blocks submitted to the main thread MUST run on the main thread, and</span></span><br><span class="line">    <span class="comment">// dispatch_async_and_wait also executes on the remote context rather than</span></span><br><span class="line">    <span class="comment">// the current thread.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// For both these cases we need to save the frame linkage for the sake of</span></span><br><span class="line">    <span class="comment">// _dispatch_async_and_wait_invoke</span></span><br><span class="line">    _dispatch_thread_frame_save_state(&amp;dsc-&gt;dsc_dtf);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//根据dq_state 选择等待的策略，</span></span><br><span class="line">    <span class="keyword">if</span> (_dq_state_is_suspended(dq_state) ||</span><br><span class="line">            _dq_state_is_base_anon(dq_state)) &#123;</span><br><span class="line">        dsc-&gt;dc_data = DISPATCH_WLH_ANON;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (_dq_state_is_base_wlh(dq_state)) &#123;</span><br><span class="line">        dsc-&gt;dc_data = (dispatch_wlh_t)dq;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//如果不是上面的两种，就重新计算等待策略</span></span><br><span class="line">        _dispatch_wait_compute_wlh(upcast(dq)._dl, dsc);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">//初始化</span></span><br><span class="line">    <span class="keyword">if</span> (dsc-&gt;dc_data == DISPATCH_WLH_ANON) &#123;</span><br><span class="line">        dsc-&gt;dsc_override_qos_floor = dsc-&gt;dsc_override_qos =</span><br><span class="line">                (uint8_t)_dispatch_get_basepri_override_qos_floor();</span><br><span class="line">        _dispatch_thread_event_init(&amp;dsc-&gt;dsc_event);</span><br><span class="line">    &#125;</span><br><span class="line">     <span class="comment">// 将要执行的任务入队</span></span><br><span class="line">    dx_push(dq, dsc, _dispatch_qos_from_pp(dsc-&gt;dc_priority));</span><br><span class="line">    _dispatch_trace_runtime_event(sync_wait, dq, <span class="number">0</span>);</span><br><span class="line">    <span class="keyword">if</span> (dsc-&gt;dc_data == DISPATCH_WLH_ANON) &#123;</span><br><span class="line">        <span class="comment">//基于信号量的等待</span></span><br><span class="line">        _dispatch_thread_event_wait(&amp;dsc-&gt;dsc_event); <span class="comment">// acquire</span></span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">//基于kevent:_dispatch_kq_poll</span></span><br><span class="line">        _dispatch_event_loop_wait_for_ownership(dsc);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (dsc-&gt;dc_data == DISPATCH_WLH_ANON) &#123;</span><br><span class="line">        _dispatch_thread_event_destroy(&amp;dsc-&gt;dsc_event);</span><br><span class="line">        <span class="comment">// If _dispatch_sync_waiter_wake() gave this thread an override,</span></span><br><span class="line">        <span class="comment">// ensure that the root queue sees it.</span></span><br><span class="line">        <span class="keyword">if</span> (dsc-&gt;dsc_override_qos &gt; dsc-&gt;dsc_override_qos_floor) &#123;</span><br><span class="line">            _dispatch_set_basepri_override_qos(dsc-&gt;dsc_override_qos);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>先来看一下死锁检测，在上面分析过的<code>_dispatch_queue_try_acquire_barrier_sync_and_suspend</code>，也就是修改队列的<code>dq_state</code>时，会记录下正在调度的线程的<code>tid</code>，而在构建上下文的过程中，同样会对<code>dsc-&gt;dsc_waiter</code>写入线程的 tid，所以<code>_dq_state_drain_locked_by</code>这个其实就是：<br>即将进入等待的线程的tid，是否已经持有了锁。（线程已经处在持有锁的的状态，如果在进入等待，就是死锁）   </p>
+<p>接下来的就是等待的策略了。如下：</p>
+<ol>
+<li>根据<code>dq_state</code>计算等待类型并更新给<code>dsc-&gt;dc_data</code>。  <ol>
+<li>根据暂停，wlh的状态分别给<code>dsc-&gt;dc_data</code>。</li>
+<li>如果都不满足就根据上下文和dq重新计算。</li>
+</ol>
+</li>
+<li>将本次任务加入对应的队列。<ol>
+<li>调用对应队列的<code>dq_push</code>，这里是<code>_dispatch_lane_push</code>。</li>
+</ol>
+</li>
+<li>执行等待策略。  <ol>
+<li>基于信号量的等待。</li>
+<li>基于kevent的等待。  </li>
+</ol>
+</li>
+</ol>
+<p>关于调用队列的<code>_dispatch_lane_push</code>方法，由于此时当前任务在等待执行，因此会进一步调用<code>_dispatch_lane_push_waiter</code>，该方法的主要相关流程如下：</p>
+<ol>
+<li>更新<code>dq_state</code>的状态：包括设置为<code>DIRTY</code>，qos的合并等。</li>
+<li><p>根据新的<code>dq_state</code>，执行对应方法：override，complete等。</p>
+<p>lldb调试如下：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/44E8EA4B-9ED5-4B7C-8E39-EB076A86F379.png" alt="lldb"><br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/6DFB34B3-4E25-48CD-968E-532E8E02CA49.png" alt="lldb"></p>
+</li>
+</ol>
+<p>基于kevent的等待事件(关于kevent，kqueue请查看GCD概念篇)，最终会调用<code>_dispatch_kq_poll</code>来轮询等待内核事件，那么等待结束的时机是什么呢？同样通过一组调用栈来查看：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/B8832DD8-C295-4226-8927-745B06412250.png" alt="lldb"></p>
+<p>而另外正在执行的线程的调用栈如下：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/4BAFF1B8-F1DB-481A-BCAB-987DF5A810F0.png" alt="lldb"></p>
+<p>其实就是前一个任务执行完毕时。回到我们上面说的item执行完毕的函数<code>_dispatch_lane_barrier_sync_invoke_and_complete</code>。在该方法内，会有两个判断分支调用<code>_dispatch_lane_barrier_complete</code>。分别为：队列的尾部不为空或者dq_state被其他线程修改了。也就是我们分析过的 wait内部的流程。</p>
+<h3 id="dispatch-lane-barrier-complete"><a href="#dispatch-lane-barrier-complete" class="headerlink" title="_dispatch_lane_barrier_complete"></a>_dispatch_lane_barrier_complete</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_lane_barrier_complete(dispatch_lane_class_t dqu, dispatch_qos_t qos,</span><br><span class="line">        dispatch_wakeup_flags_t flags)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_queue_wakeup_target_t target = DISPATCH_QUEUE_WAKEUP_NONE;</span><br><span class="line">    dispatch_lane_t dq = dqu._dl;</span><br><span class="line">    <span class="comment">//后面还有任务 &amp;&amp; 队列没有被暂停</span></span><br><span class="line">    <span class="keyword">if</span> (dq-&gt;dq_items_tail &amp;&amp; !DISPATCH_QUEUE_IS_SUSPENDED(dq)) &#123;</span><br><span class="line">        struct dispatch_object_s *dc = _dispatch_queue_get_head(dq);</span><br><span class="line">        <span class="comment">//串行 或者 是barrier</span></span><br><span class="line">        <span class="keyword">if</span> (likely(dq-&gt;dq_width == <span class="number">1</span> || _dispatch_object_is_barrier(dc))) &#123;</span><br><span class="line">            <span class="keyword">if</span> (_dispatch_object_is_waiter(dc)) &#123;</span><br><span class="line">            <span class="comment">//这里只需要判断是否在等待，如果没有在等待直接会走最下面的_dispatch_lane_class_barrier_complete</span></span><br><span class="line">                <span class="keyword">return</span> _dispatch_lane_drain_barrier_waiter(dq, dc, flags, <span class="number">0</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span> (dq-&gt;dq_width &gt; <span class="number">1</span> &amp;&amp; !_dispatch_object_is_barrier(dc)) &#123;</span><br><span class="line">            <span class="comment">//并行或者没有处在barrier中</span></span><br><span class="line">            <span class="keyword">return</span> _dispatch_lane_drain_non_barriers(dq, dc, flags);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (!(flags &amp; DISPATCH_WAKEUP_CONSUME_2)) &#123;</span><br><span class="line">            _dispatch_retain_2(dq);</span><br><span class="line">            flags |= DISPATCH_WAKEUP_CONSUME_2;</span><br><span class="line">        &#125;</span><br><span class="line">        target = DISPATCH_QUEUE_WAKEUP_TARGET;</span><br><span class="line">    &#125;</span><br><span class="line">    uint64_t owned = DISPATCH_QUEUE_IN_BARRIER +</span><br><span class="line">            dq-&gt;dq_width * DISPATCH_QUEUE_WIDTH_INTERVAL;</span><br><span class="line">    <span class="keyword">return</span> _dispatch_lane_class_barrier_complete(dq, qos, flags, target, owned);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里有个小技巧，当分析 barrier相关方法时，可以这样想：</p>
+<blockquote>
+<p>当栅栏中的一个任务执行完毕后(barrier_complete)，应该通知下一个任务开始执行。同步函数也有这样的特性。   </p>
+</blockquote>
+<p>这里的三个分支，大体上逻辑相同：通过对<code>dq_state</code>的和队列的执行状态判断直接唤起还是<code>redirect</code>到<code>targetQueue</code>。这里我们直接看<code>_dispatch_lane_drain_barrier_waiter</code></p>
+<h3 id="dispatch-lane-drain-barrier-waiter"><a href="#dispatch-lane-drain-barrier-waiter" class="headerlink" title="_dispatch_lane_drain_barrier_waiter"></a>_dispatch_lane_drain_barrier_waiter</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_lane_drain_barrier_waiter(dispatch_lane_t dq,</span><br><span class="line">        struct dispatch_object_s *dc, dispatch_wakeup_flags_t flags,</span><br><span class="line">        uint64_t enqueued_bits)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_sync_context_t dsc = (dispatch_sync_context_t)dc;</span><br><span class="line">    struct dispatch_object_s *next_dc;</span><br><span class="line">    uint64_t next_owner = <span class="number">0</span>, old_state, new_state;</span><br><span class="line"></span><br><span class="line">    next_owner = _dispatch_lock_value_from_tid(dsc-&gt;dsc_waiter);</span><br><span class="line">    next_dc = _dispatch_queue_pop_head(dq, dc);</span><br><span class="line">    <span class="comment">//这里下一个 item的执行过程中，dq_state的enqueued仍然有效，保证队列的正常执行(保持锁的状态)</span></span><br><span class="line">transfer_lock_again:</span><br><span class="line">    os_atomic_rmw_loop2o(dq, dq_state, old_state, new_state, release, &#123;</span><br><span class="line">        new_state  = old_state;</span><br><span class="line">        new_state &amp;= ~DISPATCH_QUEUE_DRAIN_UNLOCK_MASK;</span><br><span class="line">        new_state &amp;= ~DISPATCH_QUEUE_DIRTY;</span><br><span class="line">        new_state |= next_owner;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (_dq_state_is_base_wlh(old_state)) &#123;</span><br><span class="line">            new_state |= DISPATCH_QUEUE_SYNC_TRANSFER;</span><br><span class="line">            <span class="keyword">if</span> (next_dc) &#123;</span><br><span class="line">                <span class="comment">// we know there's a next item, keep the enqueued bit if any</span></span><br><span class="line">            &#125; <span class="keyword">else</span> <span class="keyword">if</span> (unlikely(_dq_state_is_dirty(old_state))) &#123;</span><br><span class="line">                os_atomic_rmw_loop_give_up(&#123;</span><br><span class="line">                    os_atomic_xor2o(dq, dq_state, DISPATCH_QUEUE_DIRTY, acquire);</span><br><span class="line">                    next_dc = os_atomic_load2o(dq, dq_items_head, relaxed);</span><br><span class="line">                    goto transfer_lock_again;</span><br><span class="line">                &#125;);</span><br><span class="line">            &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                new_state &amp;= ~DISPATCH_QUEUE_MAX_QOS_MASK;</span><br><span class="line">                new_state &amp;= ~DISPATCH_QUEUE_ENQUEUED;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            new_state -= enqueued_bits;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;);</span><br><span class="line"></span><br><span class="line">    <span class="comment">//唤起或redirect</span></span><br><span class="line">    <span class="keyword">return</span> _dispatch_barrier_waiter_redirect_or_wake(dq, dc, flags,</span><br><span class="line">            old_state, new_state);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="同步函数总结"><a href="#同步函数总结" class="headerlink" title="同步函数总结"></a>同步函数总结</h2><p>下面通过一张图来总结同步函数的流程。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/gcd_sync.png" alt="sync"></p>
+<h2 id="async"><a href="#async" class="headerlink" title="async"></a>async</h2><h3 id="dispatch-async"><a href="#dispatch-async" class="headerlink" title="dispatch_async"></a>dispatch_async</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">dispatch_async(dispatch_queue_t dq, dispatch_block_t work)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//先把GCD block 包装成continuation</span></span><br><span class="line">    dispatch_continuation_t dc = _dispatch_continuation_alloc();</span><br><span class="line">    uintptr_t dc_flags = DC_FLAG_CONSUME;</span><br><span class="line">    dispatch_qos_t qos;</span><br><span class="line"></span><br><span class="line">    qos = _dispatch_continuation_init(dc, dq, work, <span class="number">0</span>, dc_flags);</span><br><span class="line">    _dispatch_continuation_async(dq, dc, qos, dc-&gt;dc_flags);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个函数主要就是对work的包装。</p>
+<h3 id="dispatch-continuation-async"><a href="#dispatch-continuation-async" class="headerlink" title="_dispatch_continuation_async"></a>_dispatch_continuation_async</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> inline <span class="keyword">void</span></span><br><span class="line">_dispatch_continuation_async(dispatch_queue_class_t dqu,</span><br><span class="line">        dispatch_continuation_t dc, dispatch_qos_t qos, uintptr_t dc_flags)</span><br><span class="line">&#123;</span><br><span class="line">#if DISPATCH_INTROSPECTION</span><br><span class="line">    <span class="keyword">if</span> (!(dc_flags &amp; DC_FLAG_NO_INTROSPECTION)) &#123;</span><br><span class="line">        _dispatch_trace_item_push(dqu, dc);</span><br><span class="line">    &#125;</span><br><span class="line">#else</span><br><span class="line">    (<span class="keyword">void</span>)dc_flags;</span><br><span class="line">#endif</span><br><span class="line">    <span class="keyword">return</span> dx_push(dqu._dq, dc, qos);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>dx_push</code>的定义如下<br><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">#define dx_push(x, y, z) dx_vtable(x)-&gt;do_push(x, y, z)</span><br><span class="line">#define dx_vtable(x) (&amp;(x)-&gt;do_vtable-&gt;_os_obj_vtable)</span><br></pre></td></tr></table></figure></p>
+<p>会调用<code>dq<code>的<code>do_push<code>方法，可以在<code>init.c<code>中查看到<code>do_push<code>的定义，这里直接给出结论<code>_dispatch_lane_concurrent_push<code></code></code></code></code></code></code></code></code></code></code></p>
+<h3 id="dispatch-lane-concurrent-push"><a href="#dispatch-lane-concurrent-push" class="headerlink" title="_dispatch_lane_concurrent_push"></a>_dispatch_lane_concurrent_push</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span></span><br><span class="line">_dispatch_lane_concurrent_push(dispatch_lane_t dq, dispatch_object_t dou,</span><br><span class="line">        dispatch_qos_t qos)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// &lt;rdar://problem/24738102&amp;24743140&gt; reserving non barrier width</span></span><br><span class="line">    <span class="comment">// doesn't fail if only the ENQUEUED bit is set (unlike its barrier</span></span><br><span class="line">    <span class="comment">// width equivalent), so we have to check that this thread hasn't</span></span><br><span class="line">    <span class="comment">// enqueued anything ahead of this call or we can break ordering</span></span><br><span class="line">    <span class="keyword">if</span> (dq-&gt;dq_items_tail == NULL &amp;&amp;</span><br><span class="line">            !_dispatch_object_is_waiter(dou) &amp;&amp;</span><br><span class="line">            !_dispatch_object_is_barrier(dou) &amp;&amp;</span><br><span class="line">            _dispatch_queue_try_acquire_async(dq)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_continuation_redirect_push(dq, dou, qos);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    _dispatch_lane_push(dq, dou, qos);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里第一次看也想了很久，通过lldb调试，发现每次都命中了if中的条件，也就是<code>dq-&gt;dq_items_tail == NULL</code>。  </p>
+<blockquote>
+<p>第一感觉是这里不应该为<code>NULL</code>的啊？因为在调用<code>dispatch_async</code>时，传入了block，那就应该会被追加到队里。  </p>
+</blockquote>
+<p>这句话只对了一半(后半句)，确实block (continuation)会被追加到队列中，但并不是我们创建的队列，而是<code>root queue</code>。因此当前code&gt;dq-&gt;dq_items_tail == NULL也就解释的通了。接下来就是追加<code>root queue</code>的过程。</p>
+<h3 id="dispatch-continuation-redirect-push"><a href="#dispatch-continuation-redirect-push" class="headerlink" title="_dispatch_continuation_redirect_push"></a>_dispatch_continuation_redirect_push</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_continuation_redirect_push(dispatch_lane_t dl,</span><br><span class="line">        dispatch_object_t dou, dispatch_qos_t qos)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// 这里 dou 为dispatch_continuation_t</span></span><br><span class="line">    <span class="keyword">if</span> (likely(!_dispatch_object_is_redirection(dou))) &#123;</span><br><span class="line">        dou._dc = _dispatch_async_redirect_wrap(dl, dou);</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (!dou._dc-&gt;dc_ctxt) &#123;</span><br><span class="line">        <span class="comment">// find first queue in descending target queue order that has</span></span><br><span class="line">        <span class="comment">// an autorelease frequency set, and use that as the frequency for</span></span><br><span class="line">        <span class="comment">// this continuation.</span></span><br><span class="line">        dou._dc-&gt;dc_ctxt = (<span class="keyword">void</span> *)</span><br><span class="line">        (uintptr_t)_dispatch_queue_autorelease_frequency(dl);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    dispatch_queue_t dq = dl-&gt;do_targetq;</span><br><span class="line">    <span class="keyword">if</span> (!qos) qos = _dispatch_priority_qos(dq-&gt;dq_priority);</span><br><span class="line">    dx_push(dq, dou, qos);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>再次感叹GCD命名的艺术，该方法的最终会把任务提交到<code>targetq</code>，一般为root queue。在创建队列的章节里已经说明过。因此会调用到<code>_dispatch_root_queue_push</code></p>
+<h3 id="dispatch-root-queue-push"><a href="#dispatch-root-queue-push" class="headerlink" title="_dispatch_root_queue_push"></a>_dispatch_root_queue_push</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> </span><br><span class="line">_dispatch_root_queue_push(dispatch_queue_t rq, dispatch_object_t dou,</span><br><span class="line">        dispatch_qos_t qos)</span><br><span class="line">&#123;</span><br><span class="line">    ...<span class="comment">//DISPATCH_USE_KEVENT_WORKQUEUE</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 一般情况下，无论自定义还是非自定义都会走进这个条件式(比如：dispatch_get_global_queue)</span></span><br><span class="line">    <span class="comment">// 里面主要对比的是qos与root队列的qos是否一致。</span></span><br><span class="line">    <span class="keyword">if</span> (_dispatch_root_queue_push_needs_override(rq, qos)) &#123;</span><br><span class="line">        <span class="keyword">return</span> _dispatch_root_queue_push_override(rq, dou, qos);</span><br><span class="line">    &#125;</span><br><span class="line">    _dispatch_root_queue_push_inline(rq, dou, dou, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这个方法比较简单，就是看该任务是直接入队到根队列。还是先执行<code>override</code>。通常通过<code>async</code>获得的队列，都满足条件。</p>
+<h3 id="dispatch-root-queue-push-needs-override"><a href="#dispatch-root-queue-push-needs-override" class="headerlink" title="_dispatch_root_queue_push_needs_override"></a>_dispatch_root_queue_push_needs_override</h3><p>被标记为需要<code>override</code>的队列会重新在根队列池中，重新获取一个对应QOS 的队列。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> </span><br><span class="line">_dispatch_root_queue_push_override(dispatch_queue_t orig_rq,</span><br><span class="line">        dispatch_object_t dou, dispatch_qos_t qos)</span><br><span class="line">&#123;</span><br><span class="line">    bool overcommit = orig_rq-&gt;dq_priority &amp; DISPATCH_PRIORITY_FLAG_OVERCOMMIT;</span><br><span class="line">    <span class="comment">//从GCD 的根队列池中重新获取一个</span></span><br><span class="line">    dispatch_queue_t rq = _dispatch_get_root_queue(qos, overcommit);</span><br><span class="line">    dispatch_continuation_t dc = dou._dc;</span><br><span class="line">    <span class="comment">// 这个_dispatch_object_is_redirection函数其实就是return _dispatch_object_has_type(dou,DISPATCH_CONTINUATION_TYPE(ASYNC_REDIRECT));</span></span><br><span class="line">    <span class="comment">// 所以自定义队列会走这个if语句，如果是dispatch_get_global_queue不会走if语句</span></span><br><span class="line">    <span class="keyword">if</span> (_dispatch_object_is_redirection(dc)) &#123;</span><br><span class="line">        dc-&gt;dc_func = (<span class="keyword">void</span> *)orig_rq;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="comment">// dispatch_get_global_queue来到这里</span></span><br><span class="line">        dc = _dispatch_continuation_alloc();</span><br><span class="line">        <span class="comment">// 相当于是下面的，也就是指定了执行函数为_dispatch_queue_override_invoke，所以有别于自定义队列的invoke函数。</span></span><br><span class="line">        <span class="comment">// DC_VTABLE_ENTRY(OVERRIDE_OWNING,</span></span><br><span class="line">        <span class="comment">// .do_kind = "dc-override-owning",</span></span><br><span class="line">        <span class="comment">// .do_invoke = _dispatch_queue_override_invoke),</span></span><br><span class="line">        dc-&gt;do_vtable = DC_VTABLE(OVERRIDE_OWNING);</span><br><span class="line">        _dispatch_trace_continuation_push(orig_rq, dou);</span><br><span class="line">        dc-&gt;dc_ctxt = dc;</span><br><span class="line">        dc-&gt;dc_other = orig_rq;</span><br><span class="line">        dc-&gt;dc_data = dou._do;</span><br><span class="line">        dc-&gt;dc_priority = DISPATCH_NO_PRIORITY;</span><br><span class="line">        dc-&gt;dc_voucher = DISPATCH_NO_VOUCHER;</span><br><span class="line">    &#125;</span><br><span class="line">    _dispatch_root_queue_push_inline(rq, dc, dc, <span class="number">1</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>该函数的主要作用就是GCD root queues 中重新回去一个队列，并且把对应的<code>continuation<code>和新申请的队列，执行<code>_dispatch_root_queue_push_inline</code>。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"><span class="keyword">static</span> inline <span class="keyword">void</span></span><br><span class="line">_dispatch_root_queue_push_inline(dispatch_queue_global_t dq,</span><br><span class="line">        dispatch_object_t _head, dispatch_object_t _tail, int n)</span><br><span class="line">&#123;</span><br><span class="line">    struct dispatch_object_s *hd = _head._do, *tl = _tail._do;</span><br><span class="line">    <span class="comment">//当队列为的头为空时</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(os_mpsc_push_list(os_mpsc(dq, dq_items), hd, tl, do_next))) &#123;</span><br><span class="line">    <span class="comment">// 保存队列头</span></span><br><span class="line">        <span class="keyword">return</span> _dispatch_root_queue_poke(dq, n, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></code></code></p>
+<p><code>os_mpsc_push_list</code>被定义在<code>inline_internal.h</code>中，含义为：如果队列的head 为空，则返回true。  </p>
+<p>该函数为真正的操作任务入队的函数，以为被调用的路径不同，需要先判断入队之前是否队列的头部为空(override的路径到这里为空)，如果为空需要进行<code>_dispatch_global_queue_poke</code>。</p>
+<h3 id="dispatch-global-queue-poke"><a href="#dispatch-global-queue-poke" class="headerlink" title="_dispatch_global_queue_poke"></a>_dispatch_global_queue_poke</h3><p>还函数会进一步调用<code>_dispatch_root_queue_poke_slow</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_root_queue_poke_slow(dispatch_queue_global_t dq, int n, int floor)</span><br><span class="line">&#123;</span><br><span class="line">    int remaining = n;</span><br><span class="line">    int r = ENOSYS;</span><br><span class="line"></span><br><span class="line">    _dispatch_root_queues_init();</span><br><span class="line">    _dispatch_debug_root_queue(dq, __func__);</span><br><span class="line">    _dispatch_trace_runtime_event(worker_request, dq, (uint64_t)n);</span><br><span class="line"></span><br><span class="line">#if !DISPATCH_USE_INTERNAL_WORKQUEUE</span><br><span class="line">#if DISPATCH_USE_PTHREAD_ROOT_QUEUES</span><br><span class="line">    <span class="keyword">if</span> (dx_type(dq) == DISPATCH_QUEUE_GLOBAL_ROOT_TYPE)</span><br><span class="line">#endif</span><br><span class="line">    &#123;</span><br><span class="line">        _dispatch_root_queue_debug(<span class="string">"requesting new worker thread for global "</span></span><br><span class="line">                <span class="string">"queue: %p"</span>, dq);</span><br><span class="line">        r = _pthread_workqueue_addthreads(remaining,</span><br><span class="line">                _dispatch_priority_to_pp_prefer_fallback(dq-&gt;dq_priority));</span><br><span class="line">        (<span class="keyword">void</span>)dispatch_assume_zero(r);</span><br><span class="line">        <span class="keyword">return</span>;</span><br><span class="line">    &#125;</span><br><span class="line">#endif // !DISPATCH_USE_INTERNAL_WORKQUEUE</span><br><span class="line">#if DISPATCH_USE_PTHREAD_POOL</span><br><span class="line">    dispatch_pthread_root_queue_context_t pqc = dq-&gt;do_ctxt;</span><br><span class="line">    <span class="keyword">if</span> (likely(pqc-&gt;dpq_thread_mediator.do_vtable)) &#123;</span><br><span class="line">        <span class="keyword">while</span> (dispatch_semaphore_signal(&amp;pqc-&gt;dpq_thread_mediator)) &#123;</span><br><span class="line">            _dispatch_root_queue_debug(<span class="string">"signaled sleeping worker for "</span></span><br><span class="line">                    <span class="string">"global queue: %p"</span>, dq);</span><br><span class="line">            <span class="keyword">if</span> (!--remaining) &#123;</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    bool overcommit = dq-&gt;dq_priority &amp; DISPATCH_PRIORITY_FLAG_OVERCOMMIT;</span><br><span class="line">    <span class="keyword">if</span> (overcommit) &#123;</span><br><span class="line">        os_atomic_add2o(dq, dgq_pending, remaining, relaxed);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (!os_atomic_cmpxchg2o(dq, dgq_pending, <span class="number">0</span>, remaining, relaxed)) &#123;</span><br><span class="line">            _dispatch_root_queue_debug(<span class="string">"worker thread request still pending for "</span></span><br><span class="line">                    <span class="string">"global queue: %p"</span>, dq);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    int can_request, t_count;</span><br><span class="line">    <span class="comment">// seq_cst with atomic store to tail &lt;rdar://problem/16932833&gt;</span></span><br><span class="line">    t_count = os_atomic_load2o(dq, dgq_thread_pool_size, ordered);</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        can_request = t_count &lt; floor ? <span class="number">0</span> : t_count - floor;</span><br><span class="line">        <span class="keyword">if</span> (remaining &gt; can_request) &#123;</span><br><span class="line">            _dispatch_root_queue_debug(<span class="string">"pthread pool reducing request from %d to %d"</span>,</span><br><span class="line">                    remaining, can_request);</span><br><span class="line">            os_atomic_sub2o(dq, dgq_pending, remaining - can_request, relaxed);</span><br><span class="line">            remaining = can_request;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (remaining == <span class="number">0</span>) &#123;</span><br><span class="line">            _dispatch_root_queue_debug(<span class="string">"pthread pool is full for root queue: "</span></span><br><span class="line">                    <span class="string">"%p"</span>, dq);</span><br><span class="line">            <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (!os_atomic_cmpxchgvw2o(dq, dgq_thread_pool_size, t_count,</span><br><span class="line">            t_count - remaining, &amp;t_count, acquire));</span><br><span class="line"></span><br><span class="line">    pthread_attr_t *attr = &amp;pqc-&gt;dpq_thread_attr;</span><br><span class="line">    pthread_t tid, *pthr = &amp;tid;</span><br><span class="line">#if DISPATCH_USE_MGR_THREAD &amp;&amp; DISPATCH_USE_PTHREAD_ROOT_QUEUES</span><br><span class="line">    <span class="keyword">if</span> (unlikely(dq == &amp;_dispatch_mgr_root_queue)) &#123;</span><br><span class="line">        pthr = _dispatch_mgr_root_queue_init();</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        _dispatch_retain(dq); <span class="comment">// released in _dispatch_worker_thread</span></span><br><span class="line">        <span class="keyword">while</span> ((r = pthread_create(pthr, attr, _dispatch_worker_thread, dq))) &#123;</span><br><span class="line">            <span class="keyword">if</span> (r != EAGAIN) &#123;</span><br><span class="line">                (<span class="keyword">void</span>)dispatch_assume_zero(r);</span><br><span class="line">            &#125;</span><br><span class="line">            _dispatch_temporary_resource_shortage();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (--remaining);</span><br><span class="line">#else</span><br><span class="line">    (<span class="keyword">void</span>)floor;</span><br><span class="line">#endif // DISPATCH_USE_PTHREAD_POOL</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>首先对root queues进行了初始化，<code>_dispatch_root_queues_init<code>函数会在很多地方被调用，目的是要保证在使用GCD之前，先初始化好根队列。其实现如下<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> inline <span class="keyword">void</span></span><br><span class="line">_dispatch_root_queues_init(<span class="keyword">void</span>)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_once_f(&amp;_dispatch_root_queues_pred, NULL,</span><br><span class="line">            _dispatch_root_queues_init_once);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_root_queues_init_once(<span class="keyword">void</span> *context DISPATCH_UNUSED)</span><br><span class="line">&#123;</span><br><span class="line">    _dispatch_fork_becomes_unsafe();</span><br><span class="line">#if DISPATCH_USE_INTERNAL_WORKQUEUE</span><br><span class="line">    <span class="comment">//使用pthread 线程池</span></span><br><span class="line">    size_t i;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; DISPATCH_ROOT_QUEUE_COUNT; i++) &#123;</span><br><span class="line">        _dispatch_root_queue_init_pthread_pool(&amp;_dispatch_root_queues[i], <span class="number">0</span>,</span><br><span class="line">                _dispatch_root_queues[i].dq_priority);</span><br><span class="line">    &#125;</span><br><span class="line">#else</span><br><span class="line">    <span class="comment">//使用_pthread_workqueue（XNU workq）</span></span><br><span class="line">    int wq_supported = _pthread_workqueue_supported();</span><br><span class="line">    int r = ENOTSUP;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (!(wq_supported &amp; WORKQ_FEATURE_MAINTENANCE)) &#123;</span><br><span class="line">        DISPATCH_INTERNAL_CRASH(wq_supported,</span><br><span class="line">                <span class="string">"QoS Maintenance support required"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//下面这两个init 函数非常重要。下层会将_dispatch_worker_thread2 函数绑定到线程的回调函数上。</span></span><br><span class="line">    <span class="keyword">if</span> (unlikely(!_dispatch_kevent_workqueue_enabled)) &#123;</span><br><span class="line">        r = _pthread_workqueue_init(_dispatch_worker_thread2,</span><br><span class="line">                offsetof(struct dispatch_queue_s, dq_serialnum), <span class="number">0</span>);</span><br><span class="line">#if DISPATCH_USE_KEVENT_WORKQUEUE</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (wq_supported &amp; WORKQ_FEATURE_KEVENT) &#123;</span><br><span class="line">        r = _pthread_workqueue_init_with_kevent(_dispatch_worker_thread2,</span><br><span class="line">                (pthread_workqueue_function_kevent_t)</span><br><span class="line">                _dispatch_kevent_worker_thread,</span><br><span class="line">                offsetof(struct dispatch_queue_s, dq_serialnum), <span class="number">0</span>);</span><br><span class="line">#endif</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        DISPATCH_INTERNAL_CRASH(wq_supported, <span class="string">"Missing Kevent WORKQ support"</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (r != <span class="number">0</span>) &#123;</span><br><span class="line">        DISPATCH_INTERNAL_CRASH((r &lt;&lt; <span class="number">16</span>) | wq_supported,</span><br><span class="line">                <span class="string">"Root queue initialization failed"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">#endif // DISPATCH_USE_INTERNAL_WORKQUEUE</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></code></code></p>
+<p>在初始化过程中，会判断使用哪种线程。分为<code>pthread pool</code>或者<code>xnu workqueue</code>。<br>同时下面的两个<code>_pthread_workqueue_init</code>函数也十分重要。将_dispatch_worker_thread2 函数绑定到线程的回调函数上。</p>
+<p>继续回到<code>_dispatch_root_queue_poke_slow</code>函数中。<br>这里有我们看到了有两种创建线程的方式：</p>
+<ol>
+<li>_pthread_workqueue_addthreads</li>
+<li>pthread_create。  </li>
+</ol>
+<p>下面通过lldb来确定GCD使用哪种方式<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/E1F8E96C-2BD8-42BD-BAEC-71E8A299AC1A.png" alt="lldb"></p>
+<p>因此可以确定GCD使用<code>_pthread_workqueue_addthreads</code>来申请线程。我们先来看任务的执行，然后在回到申请线程的下层。</p>
+<p>继续通过lldb获得GCD block 的调用堆栈。如图：<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/15D87AB2-40F0-4036-A898-ADD1E37AB508.png" alt="lldb"><br><code>_pthread_wqthread</code>会调用到<code>_dispatch_worker_thread2</code>，<code>_pthread_workqueue_addthreads</code>和<code>_pthread_wqthread</code>我们会在<code>libpthread</code>章节来说明。</p>
+<h3 id="dispatch-worker-thread2"><a href="#dispatch-worker-thread2" class="headerlink" title="_dispatch_worker_thread2"></a>_dispatch_worker_thread2</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_worker_thread2(pthread_priority_t pp)</span><br><span class="line">&#123;</span><br><span class="line">    bool overcommit = pp &amp; _PTHREAD_PRIORITY_OVERCOMMIT_FLAG;</span><br><span class="line">    dispatch_queue_global_t dq;</span><br><span class="line"></span><br><span class="line">    pp &amp;= _PTHREAD_PRIORITY_OVERCOMMIT_FLAG | ~_PTHREAD_PRIORITY_FLAGS_MASK;</span><br><span class="line">    _dispatch_thread_setspecific(dispatch_priority_key, (<span class="keyword">void</span> *)(uintptr_t)pp);</span><br><span class="line">    dq = _dispatch_get_root_queue(_dispatch_qos_from_pp(pp), overcommit);</span><br><span class="line"></span><br><span class="line">    _dispatch_introspection_thread_add();</span><br><span class="line">    _dispatch_trace_runtime_event(worker_unpark, dq, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    int pending = os_atomic_dec2o(dq, dgq_pending, relaxed);</span><br><span class="line">    dispatch_assert(pending &gt;= <span class="number">0</span>);</span><br><span class="line">    <span class="comment">//开始准备出队</span></span><br><span class="line">    _dispatch_root_queue_drain(dq, dq-&gt;dq_priority,</span><br><span class="line">            DISPATCH_INVOKE_WORKER_DRAIN | DISPATCH_INVOKE_REDIRECTING_DRAIN);</span><br><span class="line">    _dispatch_voucher_debug(<span class="string">"root queue clear"</span>, NULL);</span><br><span class="line">    _dispatch_reset_voucher(NULL, DISPATCH_THREAD_PARK);</span><br><span class="line">    _dispatch_trace_runtime_event(worker_park, NULL, <span class="number">0</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="dispatch-root-queue-drain"><a href="#dispatch-root-queue-drain" class="headerlink" title="_dispatch_root_queue_drain"></a>_dispatch_root_queue_drain</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="keyword">void</span></span><br><span class="line">_dispatch_root_queue_drain(dispatch_queue_global_t dq,</span><br><span class="line">        dispatch_priority_t pri, dispatch_invoke_flags_t flags)</span><br><span class="line">&#123;</span><br><span class="line">#if DISPATCH_DEBUG</span><br><span class="line">    dispatch_queue_t cq;</span><br><span class="line">    <span class="keyword">if</span> (unlikely(cq = _dispatch_queue_get_current())) &#123;</span><br><span class="line">        DISPATCH_INTERNAL_CRASH(cq, <span class="string">"Premature thread recycling"</span>);</span><br><span class="line">    &#125;</span><br><span class="line">#endif</span><br><span class="line">    _dispatch_queue_set_current(dq);</span><br><span class="line">    _dispatch_init_basepri(pri);</span><br><span class="line">    _dispatch_adopt_wlh_anon();</span><br><span class="line"></span><br><span class="line">    struct dispatch_object_s *item;</span><br><span class="line">    bool reset = <span class="literal">false</span>;</span><br><span class="line">    dispatch_invoke_context_s dic = &#123; &#125;;</span><br><span class="line">#if DISPATCH_COCOA_COMPAT</span><br><span class="line">    _dispatch_last_resort_autorelease_pool_push(&amp;dic);</span><br><span class="line">#endif // DISPATCH_COCOA_COMPAT</span><br><span class="line">    _dispatch_queue_drain_init_narrowing_check_deadline(&amp;dic, pri);</span><br><span class="line">    _dispatch_perfmon_start();</span><br><span class="line">    <span class="comment">//依次出队</span></span><br><span class="line">    <span class="keyword">while</span> (likely(item = _dispatch_root_queue_drain_one(dq))) &#123;</span><br><span class="line">        <span class="keyword">if</span> (reset) _dispatch_wqthread_override_reset();</span><br><span class="line">        _dispatch_continuation_pop_inline(item, &amp;dic, flags, dq);</span><br><span class="line">        reset = _dispatch_reset_basepri_override();</span><br><span class="line">        <span class="keyword">if</span> (unlikely(_dispatch_queue_drain_should_narrow(&amp;dic))) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// overcommit or not. worker thread</span></span><br><span class="line">    <span class="keyword">if</span> (pri &amp; DISPATCH_PRIORITY_FLAG_OVERCOMMIT) &#123;</span><br><span class="line">        _dispatch_perfmon_end(perfmon_thread_worker_oc);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        _dispatch_perfmon_end(perfmon_thread_worker_non_oc);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">#if DISPATCH_COCOA_COMPAT</span><br><span class="line">    _dispatch_last_resort_autorelease_pool_pop(&amp;dic);</span><br><span class="line">#endif // DISPATCH_COCOA_COMPAT</span><br><span class="line">    _dispatch_reset_wlh();</span><br><span class="line">    _dispatch_clear_basepri();</span><br><span class="line">    _dispatch_queue_set_current(NULL);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里可以看到，当任务开始出队列的时候，依次获取一个<code>item</code>,并调用<code>_dispatch_continuation_pop_inline</code>，这个函数比较重要，内部会区分<code>dispatch_object_t</code>的类型。</p>
+<h3 id="dispatch-continuation-pop-inline"><a href="#dispatch-continuation-pop-inline" class="headerlink" title="_dispatch_continuation_pop_inline"></a>_dispatch_continuation_pop_inline</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> inline <span class="keyword">void</span></span><br><span class="line">_dispatch_continuation_pop_inline(dispatch_object_t dou,</span><br><span class="line">        dispatch_invoke_context_t dic, dispatch_invoke_flags_t flags,</span><br><span class="line">        dispatch_queue_class_t dqu)</span><br><span class="line">&#123;</span><br><span class="line">    dispatch_pthread_root_queue_observer_hooks_t observer_hooks =</span><br><span class="line">            _dispatch_get_pthread_root_queue_observer_hooks();</span><br><span class="line">    <span class="keyword">if</span> (observer_hooks) observer_hooks-&gt;queue_will_execute(dqu._dq);</span><br><span class="line">    flags &amp;= _DISPATCH_INVOKE_PROPAGATE_MASK;</span><br><span class="line">    <span class="comment">//到这里区分dispatch_object_t 的类型，如果是continuation 类型就直接调动，如果仍然有操作表，则先进行本来的dx_invoke</span></span><br><span class="line">    <span class="keyword">if</span> (_dispatch_object_has_vtable(dou)) &#123;</span><br><span class="line">        dx_invoke(dou._dq, dic, flags);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        _dispatch_continuation_invoke_inline(dou, flags, dqu);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">if</span> (observer_hooks) observer_hooks-&gt;queue_did_execute(dqu._dq);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里重要的就是其中的判断条件：</p>
+<ol>
+<li>如果dispatch_object_t 是有<code>vtable</code>，如果有，优先执行操作表中的 <code>invoke</code>。</li>
+<li>如果没有，就直接调用<code>_dispatch_continuation_invoke_inline</code>，内部会调用<code>_dispatch_client_callout</code>。</li>
+</ol>
+<p>值得注意的是<code>_dispatch_continuation_invoke_inline</code>内部会区分<code>dispatch_group</code>和普通的callout。关于group我们将在下一章节说明。</p>
+<p>回到<code>_dispatch_client_callout</code>，就比较熟悉了。在之前的同步中已经说明过了。</p>
+<h2 id="libpthread"><a href="#libpthread" class="headerlink" title="libpthread"></a>libpthread</h2><p>当一个线程开始工作，会有内核通过汇编调用<code>_pthread_wqthread</code>函数。然后通过 <code>flags</code>来确定执行哪一个dispatch的工作函数。</p>
+<h3 id="pthread-wqthread"><a href="#pthread-wqthread" class="headerlink" title="_pthread_wqthread"></a>_pthread_wqthread</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// workqueue entry point from kernel</span></span><br><span class="line"><span class="keyword">void</span></span><br><span class="line">_pthread_wqthread(pthread_t self, mach_port_t kport, <span class="keyword">void</span> *stacklowaddr,</span><br><span class="line">        <span class="keyword">void</span> *keventlist, int flags, int nkevents)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">if</span> ((flags &amp; WQ_FLAG_THREAD_REUSE) == <span class="number">0</span>) &#123;</span><br><span class="line">        _pthread_wqthread_setup(self, kport, stacklowaddr, flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    pthread_priority_t pp;</span><br><span class="line">    <span class="keyword">if</span> (flags &amp; WQ_FLAG_THREAD_OUTSIDEQOS) &#123;</span><br><span class="line">        self-&gt;wqoutsideqos = <span class="number">1</span>;</span><br><span class="line">        pp = _pthread_priority_make_from_thread_qos(THREAD_QOS_LEGACY, <span class="number">0</span>,</span><br><span class="line">                _PTHREAD_PRIORITY_FALLBACK_FLAG);</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        self-&gt;wqoutsideqos = <span class="number">0</span>;</span><br><span class="line">        pp = _pthread_wqthread_priority(flags);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    self-&gt;tsd[_PTHREAD_TSD_SLOT_PTHREAD_QOS_CLASS] = (<span class="keyword">void</span> *)pp;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// avoid spills on the stack hard to keep used stack space minimal</span></span><br><span class="line">    <span class="keyword">if</span> (nkevents == WORKQ_EXIT_THREAD_NKEVENT) &#123;</span><br><span class="line">        goto exit;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (flags &amp; WQ_FLAG_THREAD_WORKLOOP) &#123;</span><br><span class="line">        self-&gt;fun = (<span class="keyword">void</span> *(*)(<span class="keyword">void</span>*))__libdispatch_workloopfunction;</span><br><span class="line">        self-&gt;wq_retop = WQOPS_THREAD_WORKLOOP_RETURN;</span><br><span class="line">        self-&gt;wq_kqid_ptr = ((kqueue_id_t *)keventlist - <span class="number">1</span>);</span><br><span class="line">        self-&gt;arg = keventlist;</span><br><span class="line">        self-&gt;wq_nevents = nkevents;</span><br><span class="line">    &#125; <span class="keyword">else</span> <span class="keyword">if</span> (flags &amp; WQ_FLAG_THREAD_KEVENT) &#123;</span><br><span class="line">        self-&gt;fun = (<span class="keyword">void</span> *(*)(<span class="keyword">void</span>*))__libdispatch_keventfunction;</span><br><span class="line">        self-&gt;wq_retop = WQOPS_THREAD_KEVENT_RETURN;</span><br><span class="line">        self-&gt;wq_kqid_ptr = NULL;</span><br><span class="line">        self-&gt;arg = keventlist;</span><br><span class="line">        self-&gt;wq_nevents = nkevents;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">        self-&gt;fun = (<span class="keyword">void</span> *(*)(<span class="keyword">void</span>*))__libdispatch_workerfunction;</span><br><span class="line">        self-&gt;wq_retop = WQOPS_THREAD_RETURN;</span><br><span class="line">        self-&gt;wq_kqid_ptr = NULL;</span><br><span class="line">        self-&gt;arg = (<span class="keyword">void</span> *)(uintptr_t)pp;</span><br><span class="line">        self-&gt;wq_nevents = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">if</span> (os_likely(__workq_newapi)) &#123;</span><br><span class="line">            (*__libdispatch_workerfunction)(pp);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            _pthread_wqthread_legacy_worker_wrap(pp);</span><br><span class="line">        &#125;</span><br><span class="line">        goto just_return;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (nkevents &gt; <span class="number">0</span>) &#123;</span><br><span class="line">kevent_errors_retry:</span><br><span class="line">        <span class="keyword">if</span> (self-&gt;wq_retop == WQOPS_THREAD_WORKLOOP_RETURN) &#123;</span><br><span class="line">            ((pthread_workqueue_function_workloop_t)self-&gt;fun)</span><br><span class="line">                    (self-&gt;wq_kqid_ptr, &amp;self-&gt;arg, &amp;self-&gt;wq_nevents);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            ((pthread_workqueue_function_kevent_t)self-&gt;fun)</span><br><span class="line">                    (&amp;self-&gt;arg, &amp;self-&gt;wq_nevents);</span><br><span class="line">        &#125;</span><br><span class="line">        int rc = __workq_kernreturn(self-&gt;wq_retop, self-&gt;arg, self-&gt;wq_nevents, <span class="number">0</span>);</span><br><span class="line">        <span class="keyword">if</span> (os_unlikely(rc &gt; <span class="number">0</span>)) &#123;</span><br><span class="line">            self-&gt;wq_nevents = rc;</span><br><span class="line">            goto kevent_errors_retry;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">if</span> (os_unlikely(rc &lt; <span class="number">0</span>)) &#123;</span><br><span class="line">            PTHREAD_INTERNAL_CRASH(self-&gt;err_no, <span class="string">"kevent (workloop) failed"</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">just_return:</span><br><span class="line">        __workq_kernreturn(self-&gt;wq_retop, NULL, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">exit:</span><br><span class="line">    _pthread_wqthread_exit(self);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>这里会调用__libdispatch_workerfunction方法。而该函数的赋值如下：</p>
+<blockquote>
+<p>_pthread_workqueue_init_with_kevent<br>     _pthread_workqueue_init_with_workloop<br>         pthread_workqueue_setdispatch_with_workloop_np</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> int</span><br><span class="line">pthread_workqueue_setdispatch_with_workloop_np(pthread_workqueue_function2_t queue_func,</span><br><span class="line">        pthread_workqueue_function_kevent_t kevent_func,</span><br><span class="line">        pthread_workqueue_function_workloop_t workloop_func)</span><br><span class="line">&#123;</span><br><span class="line">    int res = EBUSY;</span><br><span class="line">    <span class="keyword">if</span> (__libdispatch_workerfunction == NULL) &#123;</span><br><span class="line">        <span class="comment">// Check whether the kernel supports new SPIs</span></span><br><span class="line">        res = __workq_kernreturn(WQOPS_QUEUE_NEWSPISUPP, NULL, __libdispatch_offset, kevent_func != NULL ? <span class="number">0x01</span> : <span class="number">0x00</span>);</span><br><span class="line">        <span class="keyword">if</span> (res == <span class="number">-1</span>)&#123;</span><br><span class="line">            res = ENOTSUP;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">           <span class="comment">//gcd 回调函数赋值</span></span><br><span class="line">            __libdispatch_workerfunction = queue_func;</span><br><span class="line">            __libdispatch_keventfunction = kevent_func;</span><br><span class="line">            __libdispatch_workloopfunction = workloop_func;</span><br><span class="line"></span><br><span class="line">            <span class="comment">// Prepare the kernel for workq action</span></span><br><span class="line">            (<span class="keyword">void</span>)__workq_open();</span><br><span class="line">            <span class="keyword">if</span> (__is_threaded == <span class="number">0</span>) &#123;</span><br><span class="line">                __is_threaded = <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>在<code>libdispatch</code>的根队列初始化函数中，对把GCD的回调行数传递给下次的<code>libpthread&lt;/code。<br>下面是<code>libdispatch</code>的申请线程流程。</code></p>
+<h3 id="pthread-workqueue-addthreads"><a href="#pthread-workqueue-addthreads" class="headerlink" title="_pthread_workqueue_addthreads"></a>_pthread_workqueue_addthreads</h3><p><code>_pthread_workqueue_addthreads</code>被定义在<code>libpthread</code>中<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">_pthread_workqueue_addthreads(int numthreads, pthread_priority_t priority)</span><br><span class="line">&#123;</span><br><span class="line">    int res = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (__libdispatch_workerfunction == NULL) &#123;</span><br><span class="line">        <span class="keyword">return</span> EPERM;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">#if TARGET_OS_OSX</span><br><span class="line">    <span class="comment">// &lt;rdar://problem/37687655&gt; Legacy simulators fail to boot</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// Older sims set the deprecated _PTHREAD_PRIORITY_ROOTQUEUE_FLAG wrongly,</span></span><br><span class="line">    <span class="comment">// which is aliased to _PTHREAD_PRIORITY_SCHED_PRI_FLAG and that XNU</span></span><br><span class="line">    <span class="comment">// validates and rejects.</span></span><br><span class="line">    <span class="comment">//</span></span><br><span class="line">    <span class="comment">// As a workaround, forcefully unset this bit that cannot be set here</span></span><br><span class="line">    <span class="comment">// anyway.</span></span><br><span class="line">    priority &amp;= ~_PTHREAD_PRIORITY_SCHED_PRI_FLAG;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    res = __workq_kernreturn(WQOPS_QUEUE_REQTHREADS, NULL, numthreads, (int)priority);</span><br><span class="line">    <span class="keyword">if</span> (res == <span class="number">-1</span>) &#123;</span><br><span class="line">        res = errno;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> res;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><code>__workq_kernreturn</code>被定义在<code>xnu</code>的<code>pthread_workqueue.c</code>中<br>到这里断点就跟不下去了。因此我们来反汇编这个动态库，通过<code>image list</code>获取所以的库目录。<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/B187B285-2400-41AC-AA2A-4AC28A7A203F.png" alt="lldb"><br>反汇编如图<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/4722E63ACB596717551E5546EA5C8F51.jpg" alt="lldb"></p>
+<h2 id="XNU"><a href="#XNU" class="headerlink" title="XNU"></a>XNU</h2><p>实际上这里要使用<code>syscall_code<code> 为<code>SYS_workq_kernreturn<code> 的系统调用函数来调用内核态的代码也就是<code>workq_kernreturn</code></code></code></code></code></p>
+<h3 id="workq-kernreturn"><a href="#workq-kernreturn" class="headerlink" title="workq_kernreturn"></a>workq_kernreturn</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br></pre></td><td class="code"><pre><span class="line">int</span><br><span class="line">workq_kernreturn(struct proc *p, struct workq_kernreturn_args *uap, int32_t *retval)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">//     res = __workq_kernreturn(WQOPS_QUEUE_REQTHREADS, NULL, numthreads, (int)priority);</span></span><br><span class="line">    int options = uap-&gt;options;</span><br><span class="line">    int arg2 = uap-&gt;affinity;</span><br><span class="line">    int arg3 = uap-&gt;prio;</span><br><span class="line">    struct workqueue *wq = proc_get_wqptr(p);</span><br><span class="line">    int error = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> ((p-&gt;p_lflag &amp; P_LREGISTER) == <span class="number">0</span>) &#123;</span><br><span class="line">        <span class="keyword">return</span> EINVAL;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">switch</span> (options) &#123;</span><br><span class="line">    <span class="keyword">case</span> WQOPS_QUEUE_NEWSPISUPP: &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * arg2 = offset of serialno into dispatch queue</span></span><br><span class="line"><span class="comment">         * arg3 = kevent support</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        int offset = arg2;</span><br><span class="line">        <span class="keyword">if</span> (arg3 &amp; <span class="number">0x01</span>) &#123;</span><br><span class="line">            <span class="comment">// If we get here, then userspace has indicated support for kevent delivery.</span></span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        p-&gt;p_dispatchqueue_serialno_offset = (uint64_t)offset;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> WQOPS_QUEUE_REQTHREADS: &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * arg2 = number of threads to start</span></span><br><span class="line"><span class="comment">         * arg3 = priority</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        error = workq_reqthreads(p, arg2, arg3);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> WQOPS_SET_EVENT_MANAGER_PRIORITY: &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * arg2 = priority for the manager thread</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * if _PTHREAD_PRIORITY_SCHED_PRI_FLAG is set,</span></span><br><span class="line"><span class="comment">         * the low bits of the value contains a scheduling priority</span></span><br><span class="line"><span class="comment">         * instead of a QOS value</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        pthread_priority_t pri = arg2;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (wq == NULL) &#123;</span><br><span class="line">            error = EINVAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * Normalize the incoming priority so that it is ordered numerically.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (pri &amp; _PTHREAD_PRIORITY_SCHED_PRI_FLAG) &#123;</span><br><span class="line">            pri &amp;= (_PTHREAD_PRIORITY_SCHED_PRI_MASK |</span><br><span class="line">                _PTHREAD_PRIORITY_SCHED_PRI_FLAG);</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            thread_qos_t qos = _pthread_priority_thread_qos(pri);</span><br><span class="line">            int relpri = _pthread_priority_relpri(pri);</span><br><span class="line">            <span class="keyword">if</span> (relpri &gt; <span class="number">0</span> || relpri &lt; THREAD_QOS_MIN_TIER_IMPORTANCE ||</span><br><span class="line">                qos == THREAD_QOS_UNSPECIFIED) &#123;</span><br><span class="line">                error = EINVAL;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">            pri &amp;= ~_PTHREAD_PRIORITY_FLAGS_MASK;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * If userspace passes a scheduling priority, that wins over any QoS.</span></span><br><span class="line"><span class="comment">         * Userspace should takes care not to lower the priority this way.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        workq_lock_spin(wq);</span><br><span class="line">        <span class="keyword">if</span> (wq-&gt;wq_event_manager_priority &lt; (uint32_t)pri) &#123;</span><br><span class="line">            wq-&gt;wq_event_manager_priority = (uint32_t)pri;</span><br><span class="line">        &#125;</span><br><span class="line">        workq_unlock(wq);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> WQOPS_THREAD_KEVENT_RETURN:</span><br><span class="line">    <span class="keyword">case</span> WQOPS_THREAD_WORKLOOP_RETURN:</span><br><span class="line">    <span class="keyword">case</span> WQOPS_THREAD_RETURN: &#123;</span><br><span class="line">        error = workq_thread_return(p, uap, wq);</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">case</span> WQOPS_SHOULD_NARROW: &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * arg2 = priority to test</span></span><br><span class="line"><span class="comment">         * arg3 = unused</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        thread_t th = current_thread();</span><br><span class="line">        struct uthread *uth = get_bsdthread_info(th);</span><br><span class="line">        <span class="keyword">if</span> (((thread_get_tag(th) &amp; THREAD_TAG_WORKQUEUE) == <span class="number">0</span>) ||</span><br><span class="line">            (uth-&gt;uu_workq_flags &amp; (UT_WORKQ_DYING | UT_WORKQ_OVERCOMMIT))) &#123;</span><br><span class="line">            error = EINVAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        thread_qos_t qos = _pthread_priority_thread_qos(arg2);</span><br><span class="line">        <span class="keyword">if</span> (qos == THREAD_QOS_UNSPECIFIED) &#123;</span><br><span class="line">            error = EINVAL;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        workq_lock_spin(wq);</span><br><span class="line">        bool should_narrow = !workq_constrained_allowance(wq, qos, uth, <span class="literal">false</span>);</span><br><span class="line">        workq_unlock(wq);</span><br><span class="line"></span><br><span class="line">        *retval = should_narrow;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">case</span> WQOPS_SETUP_DISPATCH: &#123;</span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * item = pointer to workq_dispatch_config structure</span></span><br><span class="line"><span class="comment">         * arg2 = sizeof(item)</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        struct workq_dispatch_config cfg;</span><br><span class="line">        bzero(&amp;cfg, sizeof(cfg));</span><br><span class="line"></span><br><span class="line">        error = copyin(uap-&gt;item, &amp;cfg, MIN(sizeof(cfg), (unsigned long) arg2));</span><br><span class="line">        <span class="keyword">if</span> (error) &#123;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (cfg.wdc_flags &amp; ~WORKQ_DISPATCH_SUPPORTED_FLAGS ||</span><br><span class="line">            cfg.wdc_version &lt; WORKQ_DISPATCH_MIN_SUPPORTED_VERSION) &#123;</span><br><span class="line">            error = ENOTSUP;</span><br><span class="line">            <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Load fields from version 1 */</span></span><br><span class="line">        p-&gt;p_dispatchqueue_serialno_offset = cfg.wdc_queue_serialno_offs;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/* Load fields from version 2 */</span></span><br><span class="line">        <span class="keyword">if</span> (cfg.wdc_version &gt;= <span class="number">2</span>) &#123;</span><br><span class="line">            p-&gt;p_dispatchqueue_label_offset = cfg.wdc_queue_label_offs;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">default</span>:</span><br><span class="line">        error = EINVAL;</span><br><span class="line">        <span class="keyword">break</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> error;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>因为<code>libpthread</code>传入的参数为<code>WQOPS_QUEUE_REQTHREADS</code>因此会调用到<code>WQOPS_QUEUE_REQTHREADS</code></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * Entry point for libdispatch to ask for threads</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"></span><br><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment"> typedef struct workq_threadreq_s &#123;</span></span><br><span class="line"><span class="comment">    union &#123;</span></span><br><span class="line"><span class="comment">        struct priority_queue_entry tr_entry;</span></span><br><span class="line"><span class="comment">        thread_t tr_thread;</span></span><br><span class="line"><span class="comment">    &#125;;</span></span><br><span class="line"><span class="comment">    uint16_t           tr_count;</span></span><br><span class="line"><span class="comment">    workq_tr_flags_t   tr_flags;</span></span><br><span class="line"><span class="comment">    workq_tr_state_t   tr_state;</span></span><br><span class="line"><span class="comment">    thread_qos_t       tr_qos;                 qos for the thread request </span></span><br><span class="line"><span class="comment"></span></span><br><span class="line"><span class="comment">     kqueue states, modified under the kqlock </span></span><br><span class="line"><span class="comment">    kq_index_t         tr_kq_override_index;    highest wakeup override index </span></span><br><span class="line"><span class="comment">    kq_index_t         tr_kq_qos_index;         QoS for the servicer </span></span><br><span class="line"><span class="comment">    bool               tr_kq_wakeup;            an event has fired </span></span><br><span class="line"><span class="comment">&#125; workq_threadreq_s, *workq_threadreq_t;</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment">proc: proc_t process</span></span><br><span class="line"><span class="comment">*/</span></span><br><span class="line"><span class="keyword">static</span> int</span><br><span class="line">workq_reqthreads(struct proc *p, uint32_t reqcount, pthread_priority_t pp)</span><br><span class="line">&#123;</span><br><span class="line">    thread_qos_t qos = _pthread_priority_thread_qos(pp);</span><br><span class="line">    <span class="comment">//根据进程获取 对应的 work queue</span></span><br><span class="line">    struct workqueue *wq = proc_get_wqptr(p);</span><br><span class="line">    uint32_t unpaced, upcall_flags = WQ_FLAG_THREAD_NEWSPI;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (wq == NULL || reqcount &lt;= <span class="number">0</span> || reqcount &gt; UINT16_MAX ||</span><br><span class="line">        qos == THREAD_QOS_UNSPECIFIED) &#123;</span><br><span class="line">        <span class="keyword">return</span> EINVAL;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    WQ_TRACE_WQ(TRACE_wq_wqops_reqthreads | DBG_FUNC_NONE,</span><br><span class="line">        wq, reqcount, pp, <span class="number">0</span>, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    workq_threadreq_t req = zalloc(workq_zone_threadreq);</span><br><span class="line">    priority_queue_entry_init(&amp;req-&gt;tr_entry);</span><br><span class="line">    req-&gt;tr_state = WORKQ_TR_STATE_NEW;</span><br><span class="line">    req-&gt;tr_flags = <span class="number">0</span>;</span><br><span class="line">    req-&gt;tr_qos   = qos;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (pp &amp; _PTHREAD_PRIORITY_OVERCOMMIT_FLAG) &#123;</span><br><span class="line">        req-&gt;tr_flags |= WORKQ_TR_FLAG_OVERCOMMIT;</span><br><span class="line">        upcall_flags |= WQ_FLAG_THREAD_OVERCOMMIT;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    WQ_TRACE_WQ(TRACE_wq_thread_request_initiate | DBG_FUNC_NONE,</span><br><span class="line">        wq, workq_trace_req_id(req), req-&gt;tr_qos, reqcount, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    workq_lock_spin(wq);</span><br><span class="line">    <span class="keyword">do</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (_wq_exiting(wq)) &#123;</span><br><span class="line">            goto exiting;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * When userspace is asking for parallelism, wakeup up to (reqcount - 1)</span></span><br><span class="line"><span class="comment">         * threads without pacing, to inform the scheduler of that workload.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * The last requests, or the ones that failed the admission checks are</span></span><br><span class="line"><span class="comment">         * enqueued and go through the regular creator codepath.</span></span><br><span class="line"><span class="comment">         *</span></span><br><span class="line"><span class="comment">         * If there aren't enough threads, add one, but re-evaluate everything</span></span><br><span class="line"><span class="comment">         * as conditions may now have changed.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">if</span> (reqcount &gt; <span class="number">1</span> &amp;&amp; (req-&gt;tr_flags &amp; WORKQ_TR_FLAG_OVERCOMMIT) == <span class="number">0</span>) &#123;</span><br><span class="line">            unpaced = workq_constrained_allowance(wq, qos, NULL, <span class="literal">false</span>);</span><br><span class="line">            <span class="keyword">if</span> (unpaced &gt;= reqcount - <span class="number">1</span>) &#123;</span><br><span class="line">                unpaced = reqcount - <span class="number">1</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            unpaced = reqcount - <span class="number">1</span>;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * This path does not currently handle custom workloop parameters</span></span><br><span class="line"><span class="comment">         * when creating threads for parallelism.</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        assert(!(req-&gt;tr_flags &amp; WORKQ_TR_FLAG_WL_PARAMS));</span><br><span class="line"></span><br><span class="line">        <span class="comment">/*</span></span><br><span class="line"><span class="comment">         * This is a trimmed down version of workq_threadreq_bind_and_unlock()</span></span><br><span class="line"><span class="comment">         */</span></span><br><span class="line">        <span class="keyword">while</span> (unpaced &gt; <span class="number">0</span> &amp;&amp; wq-&gt;wq_thidlecount) &#123;</span><br><span class="line">            struct uthread *uth;</span><br><span class="line">            bool needs_wakeup;</span><br><span class="line">            uint8_t uu_flags = UT_WORKQ_EARLY_BOUND;</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> (req-&gt;tr_flags &amp; WORKQ_TR_FLAG_OVERCOMMIT) &#123;</span><br><span class="line">                uu_flags |= UT_WORKQ_OVERCOMMIT;</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            uth = workq_pop_idle_thread(wq, uu_flags, &amp;needs_wakeup);</span><br><span class="line"></span><br><span class="line">            _wq_thactive_inc(wq, qos);</span><br><span class="line">            wq-&gt;wq_thscheduled_count[_wq_bucket(qos)]++;</span><br><span class="line">            workq_thread_reset_pri(wq, uth, req, <span class="comment">/*unpark*/</span> <span class="literal">true</span>);</span><br><span class="line">            wq-&gt;wq_fulfilled++;</span><br><span class="line"></span><br><span class="line">            uth-&gt;uu_save.uus_workq_park_data.upcall_flags = upcall_flags;</span><br><span class="line">            uth-&gt;uu_save.uus_workq_park_data.thread_request = req;</span><br><span class="line">            <span class="keyword">if</span> (needs_wakeup) &#123;</span><br><span class="line">                workq_thread_wakeup(uth);</span><br><span class="line">            &#125;</span><br><span class="line">            unpaced--;</span><br><span class="line">            reqcount--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125; <span class="keyword">while</span> (unpaced &amp;&amp; wq-&gt;wq_nthreads &lt; wq_max_threads &amp;&amp;</span><br><span class="line">        workq_add_new_idle_thread(p, wq));</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (_wq_exiting(wq)) &#123;</span><br><span class="line">        goto exiting;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    req-&gt;tr_count = reqcount;</span><br><span class="line">    <span class="keyword">if</span> (workq_threadreq_enqueue(wq, req)) &#123;</span><br><span class="line">        <span class="comment">/* This can drop the workqueue lock, and take it again */</span></span><br><span class="line">        workq_schedule_creator(p, wq, WORKQ_THREADREQ_CAN_CREATE_THREADS);</span><br><span class="line">    &#125;</span><br><span class="line">    workq_unlock(wq);</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">exiting:</span><br><span class="line">    workq_unlock(wq);</span><br><span class="line">    zfree(workq_zone_threadreq, req);</span><br><span class="line">    <span class="keyword">return</span> ECANCELED;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>通过注释我们可以知道，该方法会基于内核状态判断当前是否需要生成新的线程。</p>
+<h3 id="async-串行队列"><a href="#async-串行队列" class="headerlink" title="async+串行队列"></a>async+串行队列</h3><p><code>async+串行队列</code> 的场景，其实在讲<code>sync</code>的时候，我们已经操作过了，在该场景下，会调用<code>_dispatch_lane_push</code>。之后的流程也分析过了，这里不在赘述。</p>
+<h2 id="异步函数总结"><a href="#异步函数总结" class="headerlink" title="异步函数总结"></a>异步函数总结</h2><p><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/gcd/gcd_async.png" alt="async"></p>
+<h3 id="主队列与runloop"><a href="#主队列与runloop" class="headerlink" title="主队列与runloop"></a>主队列与runloop</h3><p>主队列只能在主线程下执行，但是主线程不一定只运行主队列。<br>主队列的任务执行比较特殊，要依赖与runloop的运行。</p>
+<h2 id="参考文献"><a href="#参考文献" class="headerlink" title="参考文献"></a>参考文献</h2><p><a href="https://developer.apple.com/library/archive/documentation/General/Conceptual/ConcurrencyProgrammingGuide" target="_blank" rel="noopener">Concurrency Programming Guide</a><br><a href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/Introduction/Introduction.html#//apple_ref/doc/uid/10000057i-CH1-SW1" target="_blank" rel="noopener">Threading Programming Guide</a><br><a href="http://newosxbook.com/articles/GCD.html" target="_blank" rel="noopener">GCD Internals</a></p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/GCD/" rel="tag"># GCD</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/02/26/GCD之数据结构及概念向/" rel="next" title="GCD之数据结构及概念向">
+                <i class="fa fa-chevron-left"></i> GCD之数据结构及概念向
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/03/07/GCD之同步与组/" rel="prev" title="GCD之同步与组">
+                GCD之同步与组 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#队列的创建"><span class="nav-number">2.</span> <span class="nav-text">队列的创建</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#dispatch-queue-create"><span class="nav-number">3.</span> <span class="nav-text">dispatch_queue_create</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#sync"><span class="nav-number">4.</span> <span class="nav-text">sync</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-sync-f-inline"><span class="nav-number">4.1.</span> <span class="nav-text">_dispatch_sync_f_inline</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-barrier-sync-f-inline"><span class="nav-number">4.2.</span> <span class="nav-text">_dispatch_barrier_sync_f_inline</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-lane-barrier-sync-invoke-and-complete"><span class="nav-number">4.3.</span> <span class="nav-text">_dispatch_lane_barrier_sync_invoke_and_complete</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-queue-try-acquire-barrier-sync"><span class="nav-number">4.4.</span> <span class="nav-text">_dispatch_queue_try_acquire_barrier_sync</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-sync-f-slow"><span class="nav-number">4.5.</span> <span class="nav-text">_dispatch_sync_f_slow</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DISPATCH-WAIT-FOR-QUEUE"><span class="nav-number">4.6.</span> <span class="nav-text">__DISPATCH_WAIT_FOR_QUEUE__</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-lane-barrier-complete"><span class="nav-number">4.7.</span> <span class="nav-text">_dispatch_lane_barrier_complete</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-lane-drain-barrier-waiter"><span class="nav-number">4.8.</span> <span class="nav-text">_dispatch_lane_drain_barrier_waiter</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#同步函数总结"><span class="nav-number">5.</span> <span class="nav-text">同步函数总结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#async"><span class="nav-number">6.</span> <span class="nav-text">async</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-async"><span class="nav-number">6.1.</span> <span class="nav-text">dispatch_async</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-continuation-async"><span class="nav-number">6.2.</span> <span class="nav-text">_dispatch_continuation_async</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-lane-concurrent-push"><span class="nav-number">6.3.</span> <span class="nav-text">_dispatch_lane_concurrent_push</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-continuation-redirect-push"><span class="nav-number">6.4.</span> <span class="nav-text">_dispatch_continuation_redirect_push</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-root-queue-push"><span class="nav-number">6.5.</span> <span class="nav-text">_dispatch_root_queue_push</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-root-queue-push-needs-override"><span class="nav-number">6.6.</span> <span class="nav-text">_dispatch_root_queue_push_needs_override</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-global-queue-poke"><span class="nav-number">6.7.</span> <span class="nav-text">_dispatch_global_queue_poke</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-worker-thread2"><span class="nav-number">6.8.</span> <span class="nav-text">_dispatch_worker_thread2</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-root-queue-drain"><span class="nav-number">6.9.</span> <span class="nav-text">_dispatch_root_queue_drain</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#dispatch-continuation-pop-inline"><span class="nav-number">6.10.</span> <span class="nav-text">_dispatch_continuation_pop_inline</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#libpthread"><span class="nav-number">7.</span> <span class="nav-text">libpthread</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-wqthread"><span class="nav-number">7.1.</span> <span class="nav-text">_pthread_wqthread</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#pthread-workqueue-addthreads"><span class="nav-number">7.2.</span> <span class="nav-text">_pthread_workqueue_addthreads</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#XNU"><span class="nav-number">8.</span> <span class="nav-text">XNU</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#workq-kernreturn"><span class="nav-number">8.1.</span> <span class="nav-text">workq_kernreturn</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#async-串行队列"><span class="nav-number">8.2.</span> <span class="nav-text">async+串行队列</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#异步函数总结"><span class="nav-number">9.</span> <span class="nav-text">异步函数总结</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#主队列与runloop"><span class="nav-number">9.1.</span> <span class="nav-text">主队列与runloop</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#参考文献"><span class="nav-number">10.</span> <span class="nav-text">参考文献</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
+<meta name="keywords" content="iOS,程序员的自我修养">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Mach-O详解">
+<meta property="og:url" content="http://yfeii.github.io/2019/10/08/Mach-O详解/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChatc46b98a71d30a3cda0c9d956728b4d0b.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChatc7b8ed5c9e9bd6f38193633b602e632f.png">
+<meta property="og:updated_time" content="2019-10-13T13:26:01.833Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Mach-O详解">
+<meta name="twitter:description" content="本文将会结合苹果官方文档，来详细解读Mach-O">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChatc46b98a71d30a3cda0c9d956728b4d0b.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2019/10/08/Mach-O详解/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>Mach-O详解 | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/10/08/Mach-O详解/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Mach-O详解
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-10-08 14:50:28" itemprop="dateCreated datePublished" datetime="2019-10-08T14:50:28+08:00">2019-10-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-10-13 21:26:01" itemprop="dateModified" datetime="2019-10-13T21:26:01+08:00">2019-10-13</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/编译与链接/" itemprop="url" rel="index"><span itemprop="name">编译与链接</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文将会结合<a href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Conceptual/MachOTopics/1-Articles/executing_files.html#//apple_ref/doc/uid/TP40001829-SW1" target="_blank" rel="noopener">苹果官方文档</a>，来详细解读<code>Mach-O</code><a id="more"></a><br>本文会说明<code>Mach-O</code>的定义，及设计原理，其中与链接相关的部分原理不会在本文说明，后面会有专门的链接文章，结合demo操作和<code>Mach-O</code>来详细说明。<br>那么通过本文可以收获什么？</p>
+<h2 id="带着问题学习"><a href="#带着问题学习" class="headerlink" title="带着问题学习"></a>带着问题学习</h2><ol>
+<li>Mach-O是什么（定义）？</li>
+<li>Mach-O的内容是什么？</li>
+<li>为什么要有“段”？<h2 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h2><code>Mach-O</code>又称<code>Mach object</code>，是不同运行时规则下的 可执行文件的文件类型。<br>关于编译和链接会有另一篇文章来结合<code>Mach object</code>具体说明<h3 id="文件类型"><a href="#文件类型" class="headerlink" title="文件类型"></a>文件类型</h3><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">MH_OBJECT	        <span class="number">0x1</span>	    目标文件	</span><br><span class="line">MH_EXECUTE          <span class="number">0x2</span>	    可执行文件	</span><br><span class="line">MH_DYLIB	        <span class="number">0x6</span>	    动态库	</span><br><span class="line">MH_DYLINKER     	<span class="number">0x7</span>     动态连接器	</span><br><span class="line">MH_DSYM		        <span class="number">0xa</span>     存储二进制文件符号信息，用于Debug分析</span><br></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="目标文件和可执行文件的区别"><a href="#目标文件和可执行文件的区别" class="headerlink" title="目标文件和可执行文件的区别"></a>目标文件和可执行文件的区别</h3><p>假设现在有a.m，b.m两个文件，经过编译之后，会分别产生a.o，和b.o两个文件，此时的a.o和b.o就是目标文件，当经过链接之后，或产生新的文件c.out，此时的c文件就是可执行文件。</p>
+<h2 id="内容"><a href="#内容" class="headerlink" title="内容"></a>内容</h2><p>已mac 的应用 计算器为例，找到计算器app，右键显示包内容，contents-&gt;MacOS-&gt;Calculator，使用MachOView打开，<img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChatc46b98a71d30a3cda0c9d956728b4d0b.png" alt="如图"><br>注意看第一条，<code>Executable</code>，说明是可执行文件。<br>对于<code>Mach-O</code>的定义可查看<code>mach-o/loader.h</code>的定义</p>
+<p>Mach-O 文件包含三个区域</p>
+<h3 id="Header"><a href="#Header" class="headerlink" title="Header"></a>Header</h3><p>Mach-O Header：包含字节顺序，magic，cpu 类型，加载指令的数量等<br>先来看下定义<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * The 64-bit mach header appears at the very beginning of object files for</span></span><br><span class="line"><span class="comment"> * 64-bit architectures.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line">struct mach_header_64 &#123;</span><br><span class="line">    uint32_t    magic;        <span class="comment">/* mach magic number identifier */</span></span><br><span class="line">    <span class="number">1.</span> cafebade ：跨处理器架构的通用格式</span><br><span class="line">    <span class="number">2.</span> feedface ：<span class="number">32</span> </span><br><span class="line">    <span class="number">3.</span> feadfacf ：<span class="number">64</span></span><br><span class="line">    </span><br><span class="line">    cpu_type_t    cputype;    <span class="comment">/* cpu specifier */</span>CPU类型，比如 arm</span><br><span class="line">    cpu_subtype_t    cpusubtype;    <span class="comment">/* machine specifier */</span>对应的具体类型，比如arm64、armv7</span><br><span class="line">    uint32_t    filetype;    <span class="comment">/* type of file */</span> 文件类型，比如可执行文件、库文件、Dsym文件，见&lt;mach-o/loader.h&gt;</span><br><span class="line">    uint32_t    ncmds;        <span class="comment">/* number of load commands */</span>加载命令条数</span><br><span class="line">    uint32_t    sizeofcmds;    <span class="comment">/* the size of all the load commands */</span> 命令总size</span><br><span class="line">    uint32_t    flags;        <span class="comment">/* flags */</span></span><br><span class="line">    uint32_t    reserved;    <span class="comment">/* reserved */</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure></p>
+<p>再来看图<img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChatc7b8ed5c9e9bd6f38193633b602e632f.png" alt="看图"></p>
+<h3 id="Load-Commands"><a href="#Load-Commands" class="headerlink" title="Load Commands"></a>Load Commands</h3><p>Load Commands：包含很多内容的表，包括区域的位置，符号表，动态符号表等。每个加载指令包含一个元信息，比如指令类型，名称，在二进制中的位置等。</p>
+<p><a href="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/mach_o/WeChat8a26fecbf2ef49451ebbe0df53a8bcd7.png" target="_blank" rel="noopener">图片</a></p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">LINKEDIT:链接器使用段,这里记录了链接器(通常是dyld)需要的信息的位置.</span><br><span class="line"></span><br><span class="line">LC_DYLD_INFO_ONLY:记录具体的链接器需要的信息,比如重定向,懒加载,绑定等.</span><br><span class="line"></span><br><span class="line">LC_SYMTAB:符号表的信息,记录符号表的位置,偏移量,数据个数等,便于dyld使用</span><br><span class="line"></span><br><span class="line">LC_DYSYMTAB:符号表的额外信息,这些信息也会提供给dyld.</span><br><span class="line"></span><br><span class="line">LC_LOAD_DYLINKER:该Mach-O使用的链接器信息,记录了具体使用哪个链接器接管内核后续的加载工作,以及链接器的位置信息,通常是dyld.</span><br><span class="line"></span><br><span class="line">LC_UUID:Mach-O唯一标识符.</span><br><span class="line"></span><br><span class="line">LC_VERSION_MIN_IPHONES:该Mach-O运行的最低系统版本.</span><br><span class="line"></span><br><span class="line">LC_SOURCE_VERSION:源代码版本信息.</span><br><span class="line"></span><br><span class="line">LC_MAIN:入口地址.dyld会通过这个段去跳转程序的主入口.</span><br><span class="line"></span><br><span class="line">LC_ENCRYPTION_INFO_64:加密标识,标识了是否被加密,加密内容的偏移及大小等.</span><br><span class="line"></span><br><span class="line">LC_LOAD_DYLIB:依赖库信息,dyld会通过这个段去加载动态库,这个段标注了库的位置以及版本等信息.</span><br><span class="line"></span><br><span class="line">LC_RPATH:@rpath的路径信息.</span><br><span class="line"></span><br><span class="line">LC_FUNCTION_STARTS:函数起始地址表.</span><br><span class="line"></span><br><span class="line">LC_DATA_IN_CODE:代码段非指令的表.</span><br><span class="line"></span><br><span class="line">LC_CODE_SIGNATURE:代码签名信息.</span><br></pre></td></tr></table></figure>
+<p>其中<code>__TEXT segment </code>包含被执行的代码以只读和可执行的方式映射。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">__text section 包含编译后的机器码。</span><br><span class="line">stubs 和 stub_helper 是给动态链接器 dyld 使用，可以允许延迟链接。</span><br><span class="line">__cstring 可执行文件中的字符串。</span><br><span class="line">__const 不可变的常量。</span><br></pre></td></tr></table></figure></p>
+<p><code>__DATA segment</code> 以可读写和不可执行的方式映射，里面是会被更改的数据。</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">__nl_symbol_ptr 非延迟指针。可执行文件加载同时加载。</span><br><span class="line">__la_symbol_ptr 延迟符号指针。延迟用于可执行文件中调用未定义的函数，可执行文件里没有包含的函数会延迟加载。</span><br><span class="line">__const 需要重定向的常量，例如 char * <span class="keyword">const</span> c = “foo”; c指针指向可变的数据。</span><br><span class="line">__bss 不用初始化的静态变量，例如 <span class="keyword">static</span> int i; ANSI C 标准规定静态变量必须设置为<span class="number">0</span>。运行时静态变量的值是可修改的。</span><br><span class="line">__common 包含外部全局变量。例如在函数外定义 int i;</span><br><span class="line">__dyld 是section占位符，用于动态链接器。</span><br></pre></td></tr></table></figure>
+<p>section 的定义<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">struct section_64 &#123; <span class="comment">/* for 64-bit architectures */</span></span><br><span class="line">char        sectname[<span class="number">16</span>];    <span class="comment">/* name of this section */</span></span><br><span class="line">char        segname[<span class="number">16</span>];    <span class="comment">/* segment this section goes in */</span></span><br><span class="line">uint64_t    addr;        <span class="comment">/* memory address of this section */</span></span><br><span class="line">uint64_t    size;        <span class="comment">/* size in bytes of this section */</span></span><br><span class="line">uint32_t    offset;        <span class="comment">/* file offset of this section */</span></span><br><span class="line">uint32_t    align;        <span class="comment">/* section alignment (power of 2) */</span></span><br><span class="line">uint32_t    reloff;        <span class="comment">/* file offset of relocation entries */</span></span><br><span class="line">uint32_t    nreloc;        <span class="comment">/* number of relocation entries */</span></span><br><span class="line">uint32_t    flags;        <span class="comment">/* flags (section type and attributes)*/</span></span><br><span class="line">uint32_t    reserved1;    <span class="comment">/* reserved (for offset or index) */</span></span><br><span class="line">uint32_t    reserved2;    <span class="comment">/* reserved (for count or sizeof) */</span></span><br><span class="line">uint32_t    reserved3;    <span class="comment">/* reserved */</span></span><br></pre></td></tr></table></figure></p>
+<p>其中 <code>reloff</code>和<code>nreloc</code>会表明重定向入口信息</p>
+<p>更多 section 类型介绍可以查看苹果文档： <a href="https://developer.apple.com/library/archive/documentation/DeveloperTools/Reference/Assembler/000-Introduction/introduction.html" target="_blank" rel="noopener">OS X Assembler Reference</a></p>
+<h3 id="Data"><a href="#Data" class="headerlink" title="Data"></a>Data</h3><p>最大的部分，包含了代码，数据，比如符号表，动态符号表等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">__text: 主程序代码</span><br><span class="line"></span><br><span class="line">__stubs, __stub_helper: 用于动态链接的桩</span><br><span class="line"></span><br><span class="line">__cstring: 程序中c语言字符串</span><br><span class="line"></span><br><span class="line">__const: 常量</span><br><span class="line"></span><br><span class="line">__TEXT,__objc_methname:OC方法名称</span><br><span class="line"></span><br><span class="line">__TEXT__objc_methtype:OC方法类型</span><br><span class="line"></span><br><span class="line">__TEXT__objc_classname:OC类名</span><br><span class="line"></span><br><span class="line">__DATA,__objc_classlist:OC类列表</span><br><span class="line"></span><br><span class="line">__DATA,__objc_protollist:OC原型列表</span><br><span class="line"></span><br><span class="line">__DATA,__objc_imageinfo:OC镜像信息</span><br><span class="line"></span><br><span class="line">__DATA,__objc_const:OC常量</span><br><span class="line"></span><br><span class="line">__DATA,__objc_selfrefs:OC类自引用(self)</span><br><span class="line"></span><br><span class="line">__DATA,__objc_superrefs:OC类超类引用(super)</span><br><span class="line"></span><br><span class="line">__DATA,__objc_protolrefs:OC原型引用</span><br><span class="line"></span><br><span class="line">__DATA, __bss: 没有初始化和初始化为0 的全局变量</span><br><span class="line"></span><br><span class="line">Dynamic Loader Info:动态链接器所需要使用的信息(重定向,符号绑定,懒加载绑定等..)</span><br><span class="line"></span><br><span class="line">后续的信息就是函数起始位置,符号表,字符表,代码签名等.</span><br></pre></td></tr></table></figure>
+<h2 id="为什么要分段"><a href="#为什么要分段" class="headerlink" title="为什么要分段"></a>为什么要分段</h2><ol>
+<li>数据和指令可以被映射到两个不同的虚拟内存区域。数据区域是可读写的，指令区域是只读可执行。那就可以方便分别设置这两个区域的操作权限。</li>
+<li>两个区域分离，有助于提高缓存的命中率。（提高了程序的局部性）</li>
+<li>最主要是，系统运行多个该程序的副本时，它们指令是一样的，那内存只需要保存一份指令部分，可读写的数据区域进程私有。是不是节约了内存，动态链接那篇也是讲这样的方式来节约内存。</li>
+</ol>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+            <a href="/tags/程序员的自我修养/" rel="tag"># 程序员的自我修养</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/09/07/重拾runtime/" rel="next" title="重拾runtime">
+                <i class="fa fa-chevron-left"></i> 重拾runtime
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/10/27/程序员的自我修养（第一章）/" rel="prev" title="程序员的自我修养（第一章）">
+                程序员的自我修养（第一章） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#带着问题学习"><span class="nav-number">1.</span> <span class="nav-text">带着问题学习</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#定义"><span class="nav-number">2.</span> <span class="nav-text">定义</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#文件类型"><span class="nav-number">2.1.</span> <span class="nav-text">文件类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#目标文件和可执行文件的区别"><span class="nav-number">2.2.</span> <span class="nav-text">目标文件和可执行文件的区别</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#内容"><span class="nav-number">3.</span> <span class="nav-text">内容</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Header"><span class="nav-number">3.1.</span> <span class="nav-text">Header</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Load-Commands"><span class="nav-number">3.2.</span> <span class="nav-text">Load Commands</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Data"><span class="nav-number">3.3.</span> <span class="nav-text">Data</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#为什么要分段"><span class="nav-number">4.</span> <span class="nav-text">为什么要分段</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

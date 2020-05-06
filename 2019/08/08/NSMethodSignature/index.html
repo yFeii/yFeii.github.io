@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="本文将利用holper disassembler  class dump  窥探KVO背后的原理。">
+<meta name="keywords" content="iOS">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NSMethodSignature">
+<meta property="og:url" content="http://yfeii.github.io/2019/08/08/NSMethodSignature/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="本文将利用holper disassembler  class dump  窥探KVO背后的原理。">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChatbfc193454e57806236c9501762845e15.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChat94aee3f9cefc445ccc14f65f8bc74cc4.png">
+<meta property="og:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChat390b8b40078c97db38ce7e2f7d0dd85e.png">
+<meta property="og:updated_time" content="2019-09-07T08:27:29.418Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NSMethodSignature">
+<meta name="twitter:description" content="本文将利用holper disassembler  class dump  窥探KVO背后的原理。">
+<meta name="twitter:image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChatbfc193454e57806236c9501762845e15.png">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2019/08/08/NSMethodSignature/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>NSMethodSignature | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2019/08/08/NSMethodSignature/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">NSMethodSignature
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2019-08-08 19:01:33" itemprop="dateCreated datePublished" datetime="2019-08-08T19:01:33+08:00">2019-08-08</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2019-09-07 16:27:29" itemprop="dateModified" datetime="2019-09-07T16:27:29+08:00">2019-09-07</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/iOS基础/" itemprop="url" rel="index"><span itemprop="name">iOS基础</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>本文将利用<code>holper disassembler </code> <code>class dump </code> 窥探KVO背后的原理。<a id="more"></a></p>
+<h2 id="CoreFoundation-framework"><a href="#CoreFoundation-framework" class="headerlink" title="CoreFoundation.framework"></a>CoreFoundation.framework</h2><p>关于如何提取 CoreFoundation.framework,<a href="https://devyang.space/2019/08/08/KVO/#more" target="_blank" rel="noopener">请参考这里</a></p>
+<h2 id="NSMethodSignature"><a href="#NSMethodSignature" class="headerlink" title="NSMethodSignature"></a>NSMethodSignature</h2><p>在<code>NSInvocation</code>时，需要方法签名，而<code>NSMethodSignature</code>构造方法如下，<br>在反编译后，这两个方法其内部实现其实是一致的，如下图<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector OBJC_SWIFT_UNAVAILABLE(<span class="string">""</span>);</span><br><span class="line"><span class="comment">//___methodDescriptionForSelector([rdi class], rdx) != 0x0</span></span><br><span class="line"></span><br><span class="line">+ (NSMethodSignature *)instanceMethodSignatureForSelector:(SEL)aSelector OBJC_SWIFT_UNAVAILABLE(<span class="string">""</span>);</span><br><span class="line"><span class="comment">//___methodDescriptionForSelector(rdi, rdx) != 0x0</span></span><br><span class="line"></span><br><span class="line">同样的方法，在 ___methodDescriptionForSelector 都是传入的类对象</span><br></pre></td></tr></table></figure></p>
+<h2 id="methodDescriptionForSelector"><a href="#methodDescriptionForSelector" class="headerlink" title="___methodDescriptionForSelector"></a>___methodDescriptionForSelector</h2><p>长代码警告<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">int ___methodDescriptionForSelector(int arg0, int arg1) &#123;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// arg0:类对象</span></span><br><span class="line">    <span class="comment">// arg1:SEL</span></span><br><span class="line">    r15 = arg1;  <span class="comment">//SEL</span></span><br><span class="line">    var_38 = arg0;  <span class="comment">//类对象</span></span><br><span class="line">    <span class="comment">//非空 去 loc_141cf1</span></span><br><span class="line">    <span class="keyword">if</span> (arg0 == <span class="number">0x0</span>) goto loc_141def;</span><br><span class="line"></span><br><span class="line">loc_141cf1:</span><br><span class="line">    r12 = var_38;  <span class="comment">//类对象</span></span><br><span class="line">    var_48 = r15;  <span class="comment">//SEL</span></span><br><span class="line">    goto loc_141d00;</span><br><span class="line"></span><br><span class="line">loc_141d00:</span><br><span class="line">    <span class="comment">// protocolList</span></span><br><span class="line">    <span class="comment">// 这里声明了一个空指针传入0x0，</span></span><br><span class="line">    <span class="comment">// 如果class_copyProtocolList 有值 会赋在该指针上，类似protertyList用法</span></span><br><span class="line">    rbx = class_copyProtocolList(r12, <span class="number">0x0</span>); <span class="comment">//方法返回：Protocol</span></span><br><span class="line">    <span class="comment">// 如果没有protocolList 否则去loc_141d20</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="number">0x0</span> == <span class="number">0x0</span>) goto loc_141da0;</span><br><span class="line"></span><br><span class="line">loc_141d20:</span><br><span class="line">    <span class="comment">// 为上面的 class_copyProtocolList count指针</span></span><br><span class="line">    r13 = <span class="number">0x0</span>; </span><br><span class="line">    <span class="comment">//protocol 对象</span></span><br><span class="line">    var_40 = rbx; </span><br><span class="line">    goto loc_141d30;</span><br><span class="line"></span><br><span class="line">loc_141d30:</span><br><span class="line"></span><br><span class="line">    <span class="comment">//遍历 protocol</span></span><br><span class="line">    r14 = *(rbx + r13 * <span class="number">0x8</span>);</span><br><span class="line">    rax = class_isMetaClass(r12);</span><br><span class="line">    rax = protocol_getMethodDescription(r14, r15, <span class="number">0x1</span>, (rax ^ <span class="number">0x1</span>) &amp; <span class="number">0xff</span>);</span><br><span class="line">    rdi = r12;</span><br><span class="line">    <span class="keyword">if</span> (rax != <span class="number">0x0</span>) goto loc_141db0;</span><br><span class="line"></span><br><span class="line">loc_141d59:</span><br><span class="line">    r14 = *(rbx + r13 * <span class="number">0x8</span>);</span><br><span class="line">    rbx = rdi;</span><br><span class="line">    rax = class_isMetaClass(rdi);</span><br><span class="line">    rax = protocol_getMethodDescription(r14, r15, <span class="number">0x0</span>, (rax ^ <span class="number">0x1</span>) &amp; <span class="number">0xff</span>);</span><br><span class="line">    r14 = <span class="number">0x0</span>;</span><br><span class="line">    <span class="keyword">if</span> (rax != <span class="number">0x0</span>) goto loc_141dc0;</span><br><span class="line"></span><br><span class="line">loc_141d82:</span><br><span class="line">    r13 = r13 + <span class="number">0x1</span>;</span><br><span class="line">    r15 = var_48;  </span><br><span class="line">    r12 = rbx;</span><br><span class="line">    rbx = var_40;</span><br><span class="line">    <span class="keyword">if</span> (r13 &lt; <span class="number">0x0</span>) goto loc_141d30;</span><br><span class="line"></span><br><span class="line">loc_141d98:</span><br><span class="line">    r15 = <span class="number">0x0</span>;</span><br><span class="line">    goto loc_141dca;</span><br><span class="line"></span><br><span class="line">loc_141dca:</span><br><span class="line">    free(rbx);</span><br><span class="line">    <span class="keyword">if</span> (r15 != <span class="number">0x0</span>) goto loc_141e17;</span><br><span class="line"></span><br><span class="line">loc_141dd7:</span><br><span class="line">    <span class="comment">//获取父类</span></span><br><span class="line">    rax = class_getSuperclass(r12);</span><br><span class="line">    r12 = rax;    <span class="comment">//父类对象</span></span><br><span class="line">    r15 = var_48; <span class="comment">//SEL</span></span><br><span class="line">    <span class="keyword">if</span> (rax != <span class="number">0x0</span>) goto loc_141d00;</span><br><span class="line"></span><br><span class="line">loc_141def:</span><br><span class="line">    <span class="comment">//如果没有父类，根据 类对象，SEL 获取Method</span></span><br><span class="line">    rax = class_getInstanceMethod(var_38, r15);</span><br><span class="line">    <span class="keyword">if</span> (rax != <span class="number">0x0</span>) &#123;</span><br><span class="line">            <span class="comment">//根据Method 获取Description</span></span><br><span class="line">            rax = method_getDescription(rax);</span><br><span class="line">            r15 = *rax;</span><br><span class="line">            r14 = *(rax + <span class="number">0x8</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">else</span> &#123;</span><br><span class="line">            r15 = <span class="number">0x0</span>;</span><br><span class="line">            r14 = <span class="number">0x0</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    goto loc_141e17;</span><br><span class="line"></span><br><span class="line">loc_141e17:</span><br><span class="line">    <span class="comment">//返回 Description 可能为nil</span></span><br><span class="line">    rax = r15;</span><br><span class="line">    <span class="keyword">return</span> rax;</span><br><span class="line"></span><br><span class="line">loc_141dc0:</span><br><span class="line">    r15 = rax;</span><br><span class="line">    r12 = rbx;</span><br><span class="line">    rbx = var_40;</span><br><span class="line">    goto loc_141dca;</span><br><span class="line"></span><br><span class="line">loc_141db0:</span><br><span class="line">    r15 = rax;</span><br><span class="line">    r14 = <span class="number">0x1</span>;</span><br><span class="line">    r12 = rdi;</span><br><span class="line">    goto loc_141dca;</span><br><span class="line"></span><br><span class="line">loc_141da0:</span><br><span class="line">    <span class="comment">// 如果Protocol 为空 去 loc_141dd7</span></span><br><span class="line">    <span class="keyword">if</span> (rbx == <span class="number">0x0</span>) goto loc_141dd7;</span><br><span class="line"></span><br><span class="line">loc_141da5:</span><br><span class="line">    r14 = <span class="number">0x0</span>;</span><br><span class="line">    r15 = <span class="number">0x0</span>;</span><br><span class="line">    goto loc_141dca;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>这里面的代码去其实可读性很清晰，下面我们来梳理下调用流程<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChatbfc193454e57806236c9501762845e15.png" alt="img"></p>
+<h2 id="NSInvocation"><a href="#NSInvocation" class="headerlink" title="NSInvocation"></a>NSInvocation</h2><p>对于<code>NSInvocation</code>有个疑问</p>
+<p>NSInvocation是以什么方式调用的</p>
+<p>经过尝试了各种办法之后，我终于得到了一下信息<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChat94aee3f9cefc445ccc14f65f8bc74cc4.png" alt="img"><br>配合反编译的结果<br><img src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/img/methodSignture/WeChat390b8b40078c97db38ce7e2f7d0dd85e.png" alt="img"><br>我们可以确定，<code>[NSInvocation invoke]</code> 最后还是走了msgSend的过程</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/iOS/" rel="tag"># iOS</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/05/14/runtime总结/" rel="next" title="runtime总结">
+                <i class="fa fa-chevron-left"></i> runtime总结
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/08/08/KVO/" rel="prev" title="KVO">
+                KVO <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件。</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">27</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">11</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#CoreFoundation-framework"><span class="nav-number">1.</span> <span class="nav-text">CoreFoundation.framework</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSMethodSignature"><span class="nav-number">2.</span> <span class="nav-text">NSMethodSignature</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#methodDescriptionForSelector"><span class="nav-number">3.</span> <span class="nav-text">___methodDescriptionForSelector</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#NSInvocation"><span class="nav-number">4.</span> <span class="nav-text">NSInvocation</span></a></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
