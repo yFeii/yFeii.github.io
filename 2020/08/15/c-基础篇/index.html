@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-CN">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2">
+
+<link rel="stylesheet" href="/css/main.css?v=7.1.1">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=7.1.1">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=7.1.1">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=7.1.1" color="#222">
+
+
+
+
+
+
+
+<script id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '7.1.1',
+    sidebar: {"position":"left","display":"post","offset":12,"onmobile":false,"dimmer":false},
+    back2top: true,
+    back2top_sidebar: false,
+    fancybox: false,
+    fastclick: false,
+    lazyload: false,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+  
+
+
+
+
+  <meta name="description" content="今年的要学习一门语言，加上目前从事的工作需要c++，恰好有实践的机会，才开始了c++之旅">
+<meta name="keywords" content="c++">
+<meta property="og:type" content="article">
+<meta property="og:title" content="c++基础篇">
+<meta property="og:url" content="http://yfeii.github.io/2020/08/15/c-基础篇/index.html">
+<meta property="og:site_name" content="逆水行舟">
+<meta property="og:description" content="今年的要学习一门语言，加上目前从事的工作需要c++，恰好有实践的机会，才开始了c++之旅">
+<meta property="og:locale" content="zh-CN">
+<meta property="og:updated_time" content="2020-09-13T15:31:31.730Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="c++基础篇">
+<meta name="twitter:description" content="今年的要学习一门语言，加上目前从事的工作需要c++，恰好有实践的机会，才开始了c++之旅">
+
+
+
+
+
+  
+  
+  <link rel="canonical" href="http://yfeii.github.io/2020/08/15/c-基础篇/">
+
+
+
+<script id="page.configurations">
+  CONFIG.page = {
+    sidebar: "",
+  };
+</script>
+
+  <title>c++基础篇 | 逆水行舟</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .motion-element,
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-title { opacity: initial; }
+
+  .use-motion .logo,
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-CN">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">逆水行舟</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+    
+    
+  </div>
+
+  <div class="site-nav-toggle">
+    <button aria-label="切换导航栏">
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  
+    <ul id="menu" class="menu">
+      
+        
+        
+        
+          
+          <li class="menu-item menu-item-home">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i> <br>首页</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-tags">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/tags" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>标签</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-categories">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/categories" rel="section"><i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br>分类</a>
+
+  </li>
+        
+        
+        
+          
+          <li class="menu-item menu-item-archives">
+
+    
+    
+    
+      
+    
+
+    
+
+    <a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i> <br>归档</a>
+
+  </li>
+
+      
+      
+    </ul>
+  
+
+  
+
+  
+</nav>
+
+
+
+  
+
+
+
+</div>
+    </header>
+
+    
+
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+            
+
+          
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yfeii.github.io/2020/08/15/c-基础篇/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="yfeii">
+      <meta itemprop="description" content="邮箱1486662452@qq.com，有问题欢迎留言评论或邮件">
+      <meta itemprop="image" content="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="逆水行舟">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">c++基础篇
+
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+
+            
+            
+            
+
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+
+              
+                
+              
+
+              <time title="创建时间：2020-08-15 15:53:09" itemprop="dateCreated datePublished" datetime="2020-08-15T15:53:09+08:00">2020-08-15</time>
+            
+
+            
+              
+
+              
+                
+                <span class="post-meta-divider">|</span>
+                
+
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">更新于</span>
+                
+                <time title="修改时间：2020-09-13 23:31:31" itemprop="dateModified" datetime="2020-09-13T23:31:31+08:00">2020-09-13</time>
+              
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/c-基础/" itemprop="url" rel="index"><span itemprop="name">c++基础</span></a></span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>今年的要学习一门语言，加上目前从事的工作需要<a href="https://en.wikipedia.org/wiki/C%2B%2B" target="_blank" rel="noopener">c++</a>，恰好有实践的机会，才开始了<code>c++</code>之旅<a id="more"></a></p>
+<h2 id="函数匹配"><a href="#函数匹配" class="headerlink" title="函数匹配"></a>函数匹配</h2><p>先来看一段代码。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">template&lt;<span class="class"><span class="keyword">class</span> <span class="title">T</span>&gt;</span></span><br><span class="line"><span class="class"><span class="title">T</span> <span class="title">add</span>(<span class="title">T</span> <span class="title">a</span>, <span class="title">T</span> <span class="title">b</span>)</span>&#123;</span><br><span class="line">    <span class="keyword">return</span> a+b;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">double add(double a, double b)&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> a+b;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>由于函数重载，及函数模版的存在，<code>c++</code>需要一个良好的策略来决定调用哪一个函数，这个过程被称为<code>重载解析&lt;/code，具体过程如下：</code></p>
+<ol>
+<li>创建候选函数列表，其中包含与被调用函数的名称相同的函数和模版函数。</li>
+<li>使用候选函数列表创建可行函数列表，其中参数数目都是正确的，这其中会存在一个隐士的类型转换。</li>
+<li>确定最佳可执行函数。</li>
+</ol>
+<p>判断最佳可执行函数的优先级如下：</p>
+<ol>
+<li>完全匹配，但常规函数优先于模板函数</li>
+<li>提升转换：<code>char</code><code>short</code>转换为<code>int</code>，<code>float</code>转换为<code>double</code>。</li>
+<li>标准转换：<code>long</code>转换为<code>double</code>。</li>
+<li>用户定义的转换，如类中定义的转换。</li>
+</ol>
+<h2 id="左右值，与引用。"><a href="#左右值，与引用。" class="headerlink" title="左右值，与引用。"></a>左右值，与引用。</h2><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">TestA</span> </span>&#123;</span><br><span class="line">public:</span><br><span class="line">    int age;</span><br><span class="line">    TestA() &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"ctor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;;</span><br><span class="line">    TestA(int a) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"TestA ctor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="comment">//复制构造函数</span></span><br><span class="line">    TestA(<span class="keyword">const</span> TestA &amp;) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"copy ctor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//移动构造函数</span></span><br><span class="line">    TestA(TestA &amp;&amp;t) &#123;</span><br><span class="line">        <span class="keyword">this</span>-&gt;age = t.age;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"move ctor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//复制赋值</span></span><br><span class="line">    TestA &amp;operator=(<span class="keyword">const</span> TestA &amp; t) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"copy operator="</span> &lt;&lt; std::endl;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//移动赋值</span></span><br><span class="line">    TestA &amp;operator=(TestA &amp;&amp; t) &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"move operator="</span> &lt;&lt; std::endl;</span><br><span class="line">        <span class="keyword">this</span>-&gt;age = t.age;</span><br><span class="line">        t.age = <span class="number">-1</span>;</span><br><span class="line">        <span class="keyword">return</span> *<span class="keyword">this</span>;</span><br><span class="line">    &#125;</span><br><span class="line">    ~TestA() &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"dtor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    virtual <span class="keyword">void</span> test()&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">"TestA test"</span>&lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">class TestB : public TestA &#123;</span><br><span class="line">public:</span><br><span class="line">    </span><br><span class="line">    virtual <span class="keyword">void</span> test()&#123;</span><br><span class="line">        std::cout&lt;&lt;<span class="string">"TestB test"</span>&lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">    TestB() &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"TestB ctor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;;</span><br><span class="line"></span><br><span class="line">    virtual ~TestB() &#123;</span><br><span class="line">        std::cout &lt;&lt; <span class="string">"TestB dtor"</span> &lt;&lt; std::endl;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line">TestA &amp;test(<span class="keyword">void</span>) &#123;</span><br><span class="line">    TestA *hello = <span class="keyword">new</span> TestA;</span><br><span class="line">    <span class="keyword">return</span> *hello;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestA &amp;&amp;test2(<span class="keyword">void</span>) &#123;</span><br><span class="line">    TestA hello;</span><br><span class="line">    <span class="keyword">return</span> std::move(hello);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestA &amp;&amp;test3(<span class="keyword">void</span>) &#123;</span><br><span class="line">    TestA *hello = <span class="keyword">new</span> TestA;</span><br><span class="line">    <span class="keyword">return</span> std::move(*hello);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestA test4(<span class="keyword">void</span>) &#123;</span><br><span class="line">    TestA hello;</span><br><span class="line">    <span class="keyword">return</span> hello;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestA &amp;test5(<span class="keyword">void</span>) &#123;</span><br><span class="line">    TestA hello;</span><br><span class="line">    <span class="keyword">return</span> hello;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">TestA test6(TestA &amp;&amp;t) &#123;</span><br><span class="line">    TestA hello;</span><br><span class="line">    hello.age = t.age;</span><br><span class="line">    <span class="keyword">return</span> hello;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">int main(int argc, <span class="keyword">const</span> char * argv[]) &#123;</span><br><span class="line">    <span class="comment">// insert code here...</span></span><br><span class="line">    using namespace std;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">"Hello, World!\n"</span>;</span><br><span class="line">    </span><br><span class="line">    TestA t1 = TestA();</span><br><span class="line">    TestA t2;</span><br><span class="line"><span class="comment">//    t1.age = 10;</span></span><br><span class="line">    <span class="comment">/*   构造函数  */</span></span><br><span class="line">    <span class="comment">/*   如果“=”左边是引用类型，则不会调用额外的构造函数  */</span></span><br><span class="line">    <span class="comment">/*   如果“=”右边是值类型，则要看返回值是否和“=”左边匹配，如不匹配，需要调用对应的构造函数 */</span></span><br><span class="line">    <span class="comment">//返回&amp;</span></span><br><span class="line">    TestA t4 = test();<span class="comment">//复制构造函数,返回值为左值引用:&amp;</span></span><br><span class="line">    TestA t6 = test5();<span class="comment">//复制构造函数,返回值为左值引用:&amp;</span></span><br><span class="line">    TestA &amp;_t61 = test5();<span class="comment">//定义引用类型，不需要构造</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">//返回&amp;&amp;</span></span><br><span class="line">    TestA t7 = test2();<span class="comment">//移动构造函数,返回值为右值引用:&amp;&amp;</span></span><br><span class="line">    TestA t8 = test3();<span class="comment">//移动构造函数,返回值为右值引用:&amp;&amp;</span></span><br><span class="line">    TestA t5 = test4();<span class="comment">//=左右两边类型一样，不需要重复构造</span></span><br><span class="line">     </span><br><span class="line">    TestA rd2 = std::move(t1);<span class="comment">//移动构造</span></span><br><span class="line">    TestA &amp;&amp;rd3 = std::move(t1);<span class="comment">//定义引用类型，不需要构造</span></span><br><span class="line">    TestA &amp;&amp;rd5 = std::move(t1);<span class="comment">//定义引用类型，不需要构造</span></span><br><span class="line">    TestA &amp;rd4 = rd3;<span class="comment">//定义引用类型，不需要构造</span></span><br><span class="line">    </span><br><span class="line">    t1.age = <span class="number">200</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">/*   赋值函数  */</span></span><br><span class="line"></span><br><span class="line">    TestA m2 = t1;<span class="comment">//复制构造函数：t1是左值</span></span><br><span class="line">    rd2 = rd3;<span class="comment">//复制赋值</span></span><br><span class="line">    rd2 = std::move(t1);<span class="comment">//移动赋值</span></span><br><span class="line">    rd2 = test3();<span class="comment">//移动赋值</span></span><br><span class="line"></span><br><span class="line">    m2 = t2;<span class="comment">//复制赋值</span></span><br><span class="line">    rd3 = std::move(t2);<span class="comment">//移动赋值</span></span><br><span class="line">    rd3 = rd5;<span class="comment">//移动赋值</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>c++的构造函数除默认的构造函数之外，还有<code>复制构造函数</code><code>移动构造函数</code>。</p>
+<p>而赋值行为同样也有两类：<code>复制赋值函数</code><code>移动复制函数</code>。</p>
+<p>而这些函数都是从默认的构造函数重载得来，也就是说，这些函数的调用是遵从<code>重载解析</code>的匹配规则的，需要主要的一点就是<code>声明的右值引用类型</code>也是左值，因此下面代码是调用<code>复制赋值函数</code><br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TestA &amp;&amp;rd3 = std::move(t1);<span class="comment">//定义引用类型，不需要构造</span></span><br><span class="line">rd2 = rd3;<span class="comment">//复制赋值</span></span><br></pre></td></tr></table></figure></p>
+<p><code>rd3</code>虽然是右值引用变量，但也是左值。</p>
+<h2 id="虚函数表"><a href="#虚函数表" class="headerlink" title="虚函数表"></a>虚函数表</h2><p><code>c++</code>中的函数地址绑定分为两种方式，一种为<code>静态绑定</code>static binding：在编译器直接确定函数的实现地址。<br>另一种为<code>动态绑定</code>dynamic binding：运行时确定函数的实现地址。</p>
+<p>其中<code>动态绑定</code>是由虚函数表来实现。使用关键字<code>virtual</code> 声明为虚函数，主要来实现多态。</p>
+<p>在不声明为<code>test</code>虚函数时，编译器将根据<code>引用的类型<code>或<code>指针的类型</code>来确定应该执行的方法。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">TestB b = TestB();</span><br><span class="line">b.test();           <span class="comment">//TestB test </span></span><br><span class="line"></span><br><span class="line">TestA &amp;a = b;</span><br><span class="line">a.test();           <span class="comment">//TestA test </span></span><br><span class="line"></span><br><span class="line">TestA *c = &amp;b</span><br><span class="line">c-&gt;test();          <span class="comment">//TestA test </span></span><br><span class="line"></span><br><span class="line">TestA d = TestB()</span><br><span class="line">d.test();          <span class="comment">//???</span></span><br></pre></td></tr></table></figure></code></code></p>
+<p>如果<code>test</code>声明为虚函数，函数的执行将根据指针或引用的对象的类型来决定。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">TestB b = TestB();</span><br><span class="line">b.test();           <span class="comment">//TestB test </span></span><br><span class="line"></span><br><span class="line">TestA &amp;a = b;</span><br><span class="line">a.test();           <span class="comment">//TestB test </span></span><br><span class="line"></span><br><span class="line">TestA *c = &amp;b</span><br><span class="line">c-&gt;test();          <span class="comment">//TestB test </span></span><br><span class="line"></span><br><span class="line">TestA d = TestB()</span><br><span class="line">d.test();          <span class="comment">//???</span></span><br></pre></td></tr></table></figure></p>
+<p>这里需要可以思考下这两个例子中，最后一段代码的调用结果，结果上面说的到构造函数讲解。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">TestA d = TestB()</span><br><span class="line">d.test();          <span class="comment">//???</span></span><br></pre></td></tr></table></figure></p>
+<p>下面来分解下：</p>
+<ol>
+<li><code>TestB()</code> 将调用 <code>TestB</code>的构造函数，进而调用父类<code>TestA</code>的构造函数。并返回<code>TestB</code>的实例。</li>
+<li>此时 “=”左边的类型为 TestA，右边为<code>TestB</code>的实例，因此将发生一次“移动构造函数”。<code>TestB()</code> 为右值。</li>
+<li>移动构造函数结束，<code>d</code> 为<code>TestA()</code>的实例,因此将调用 <code>TestA()</code>的<code>test()</code>的方法。</li>
+</ol>
+<p>虚函数表是指在每个包含虚函数的类中都存在着一个函数地址的数组。当我们用父类的指针来操作一个子类的时候，这张虚函数表指明了实际所应该调用的函数。</p>
+<h2 id="智能指针"><a href="#智能指针" class="headerlink" title="智能指针"></a>智能指针</h2><h3 id="unique-ptr"><a href="#unique-ptr" class="headerlink" title="unique_ptr"></a>unique_ptr</h3><p>遵循着独占语义。在任何时间点，资源只能唯一地被一个<code>unique_ptr</code>占有。同时不提供复制语义（复制赋值和复制构造都不可以），只支持移动语义。<br><figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">void</span> exampleMethod3()&#123;</span><br><span class="line">    std::unique_ptr&lt;TestA&gt; uniqueA(<span class="keyword">new</span> TestA());</span><br><span class="line">    &#123;</span><br><span class="line">        std::unique_ptr&lt;TestA&gt; uniqueB = uniqueA;<span class="comment">//复制构造  compile error :Call to implicitly-deleted copy constructor of 'std::unique_ptr&lt;TestA&gt;'</span></span><br><span class="line">        std::unique_ptr&lt;TestA&gt; uniqueC = std::move(uniqueA);<span class="comment">//移动构造</span></span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//出了&#123;&#125; TestA 被释放</span></span><br><span class="line">    std::cout &lt;&lt; <span class="string">"exampleMethod3 end!\n"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>上面的实例首先定义了一个 <code>unique_ptr uniqueA</code>，后通过移动语言将控制权转交给<code>unique_ptr uniqueC</code>，由于<code>uniqueC</code>的作用域为里面的“{}”因此会在出了作用域时释放。</p>
+<h3 id="shared-ptr"><a href="#shared-ptr" class="headerlink" title="shared_ptr"></a>shared_ptr</h3><p><code>shared_ptr</code>有一个叫做共享所有权(sharedownership)的概念。其目标非常简单：多个指针可以同时指向一个对象，当最后一个shared_ptr离开作用域时，内存才会自动释放。也就是引用计数</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//std::shared_ptr&lt;TestA&gt; shareB;</span></span><br><span class="line"><span class="keyword">void</span> exampleMethod2()&#123;</span><br><span class="line">    std::shared_ptr&lt;TestA&gt; shareB;</span><br><span class="line">    &#123;</span><br><span class="line">        TestA *aptr = <span class="keyword">new</span> TestA();</span><br><span class="line">        std::shared_ptr&lt;TestA&gt; shareA(aptr);</span><br><span class="line">        shareB = shareA;</span><br><span class="line">        <span class="comment">// refCount - 1</span></span><br><span class="line">    &#125;</span><br><span class="line">    std::cout &lt;&lt; <span class="string">"exampleMethod2 end!\n"</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的实例同时有两个对<code>TestA</code>的引用，当“{}”的作用域结束，会进行引用计数-1，等待<code>shareB</code>的作用域结束进行释放。<br>如果把<code>shareB</code>的作用域提高到全局，则<code>TestA</code>的内存则会跟随程序的生命周期。</p>
+
+      
+    </div>
+
+    
+
+    
+    
+    
+
+    
+
+    
+      
+    
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/c/" rel="tag"># c++</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2020/04/21/编译启动系列文章之xcode-build/" rel="next" title="从编译到启动">
+                <i class="fa fa-chevron-left"></i> 从编译到启动
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2020/09/13/yoga布局解析/" rel="prev" title="yoga布局解析">
+                yoga布局解析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+  </div>
+
+
+          </div>
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="https://yfeii-blog.oss-cn-hangzhou.aliyuncs.com/profile/avatar.png" alt="yfeii">
+            
+              <p class="site-author-name" itemprop="name">yfeii</p>
+              <div class="site-description motion-element" itemprop="description">邮箱1486662452@qq.com，有问题欢迎留言评论或邮件</div>
+          </div>
+
+          
+            <nav class="site-state motion-element">
+              
+                <div class="site-state-item site-state-posts">
+                
+                  <a href="/archives/">
+                
+                    <span class="site-state-item-count">29</span>
+                    <span class="site-state-item-name">日志</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-categories">
+                  
+                    
+                      <a href="/categories">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">14</span>
+                    <span class="site-state-item-name">分类</span>
+                  </a>
+                </div>
+              
+
+              
+                
+                
+                <div class="site-state-item site-state-tags">
+                  
+                    
+                      <a href="/tags">
+                    
+                  
+                    
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                      
+                    
+                    <span class="site-state-item-count">13</span>
+                    <span class="site-state-item-name">标签</span>
+                  </a>
+                </div>
+              
+            </nav>
+          
+
+          
+
+          
+
+          
+
+          
+
+          
+          
+
+          
+            
+          
+          
+
+        </div>
+      </div>
+
+      
+      <!--noindex-->
+        <div class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+            
+            
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#函数匹配"><span class="nav-number">1.</span> <span class="nav-text">函数匹配</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#左右值，与引用。"><span class="nav-number">2.</span> <span class="nav-text">左右值，与引用。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#虚函数表"><span class="nav-number">3.</span> <span class="nav-text">虚函数表</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#智能指针"><span class="nav-number">4.</span> <span class="nav-text">智能指针</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#unique-ptr"><span class="nav-number">4.1.</span> <span class="nav-text">unique_ptr</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#shared-ptr"><span class="nav-number">4.2.</span> <span class="nav-text">shared_ptr</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </div>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+  
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love" id="animate">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">yfeii</span>
+
+  
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a href="https://hexo.io" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v3.8.0</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 – <a href="https://theme-next.org" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.1.1</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+    
+
+    
+  </div>
+
+  
+
+<script>
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+
+  
+
+
+  <script src="/js/utils.js?v=7.1.1"></script>
+
+  <script src="/js/motion.js?v=7.1.1"></script>
+
+
+
+  
+  
+
+
+  <script src="/js/affix.js?v=7.1.1"></script>
+
+  <script src="/js/schemes/pisces.js?v=7.1.1"></script>
+
+
+
+  
+  <script src="/js/scrollspy.js?v=7.1.1"></script>
+<script src="/js/post-details.js?v=7.1.1"></script>
+
+
+
+  
+
+
+  <script src="/js/next-boot.js?v=7.1.1"></script>
+
+
+  
+
+  
+
+  
+
+  
+  
+
+<script>
+  var disqus_config = function() {
+    this.page.url = "http://yfeii.github.io/2020/08/15/c-基础篇/";
+    this.page.identifier = "2020/08/15/c-基础篇/";
+    this.page.title = 'c++基础篇';
+    };
+  function loadComments() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://https-devyang-space.disqus.com/embed.js';
+    s.setAttribute('data-timestamp', '' + +new Date());
+    (d.head || d.body).appendChild(s);
+  }
+  
+    $(function() {
+      var offsetTop = $('#comments').offset().top - $(window).height();
+      if (offsetTop <= 0) {
+        // load directly when there's no a scrollbar
+        loadComments();
+      } else {
+        $(window).on('scroll.disqus_scroll', function() {
+          // offsetTop may changes because of manually resizing browser window or lazy loading images.
+          var offsetTop = $('#comments').offset().top - $(window).height();
+          var scrollTop = $(window).scrollTop();
+
+          // pre-load comments a bit? (margin or anything else)
+          if (offsetTop - scrollTop < 60) {
+            $(window).off('.disqus_scroll');
+            loadComments();
+          }
+        });
+      }
+    });
+  
+</script>
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
